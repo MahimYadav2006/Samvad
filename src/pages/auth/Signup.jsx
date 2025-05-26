@@ -1,10 +1,10 @@
 import Logo from "../../components/Logo";
 import { Link } from "react-router-dom";
-import LoginImagePath from "../../images/auth/login.svg";
-import { EnvelopeSimpleIcon, LockIcon } from "@phosphor-icons/react";
-let Login = () => {
+import SignupImagePath from "../../images/auth/signup.svg";
+import { UserIcon, EnvelopeSimpleIcon, LockIcon } from "@phosphor-icons/react";
+let Signup = () => {
   return (
-    <div className="border border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark h-screen">
+    <div className="border border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark h-auto">
       <div className="flex flex-wrap items-center h-full">
         <div className="hidden w-full xl:block xl:w-1/2">
           <div className="py-17.5 px-26 text-center">
@@ -12,13 +12,13 @@ let Login = () => {
               <Logo />
             </Link>
             <p className="2xl:px-20">
-              Hey there! Welcome Back. Login to chat with your friends.
+              Join Samvad & get a modern way to connect with your friends
             </p>
             <span className="mt-15 inline-block">
               <img
-                src={LoginImagePath}
-                alt="login"
-                className="h-115 w-auto object-cover object-center"
+                src={SignupImagePath}
+                alt="signup"
+                className="w-64 size-auto object-cover object-center"
               />
             </span>
           </div>
@@ -29,10 +29,25 @@ let Login = () => {
               Start Connecting!
             </span>
             <h2 className="mb-8 text-2xl font-bold text-black dark:text-white sm:text-title-xl2">
-              Sign In to Samvad
+              Sign Up to Samvad
             </h2>
-
             <form>
+              <div className="mb-4">
+                <label className="mb-2 block font-medium text-black dark:text-white">
+                  Name
+                </label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    placeholder="Enter your full name"
+                    className="w-full rounded-lg border border-stroke bg-transparent py-3 pl-6 pr-10 text-black outline-none focus:border-primary focus-visible:shadow-none dark:border-form-strokedark dark:bg-form-input dark:text-white dark:focus:border-primary"
+                  />
+                  <span className="absolute right-4 top-1/2 -translate-y-1/2">
+                    <UserIcon size={24} />
+                  </span>
+                </div>
+              </div>
+
               <div className="mb-4">
                 <label className="mb-2 block font-medium text-black dark:text-white">
                   Email
@@ -49,14 +64,30 @@ let Login = () => {
                 </div>
               </div>
 
-              <div className="mb-6">
+              <div className="mb-4">
                 <label className="mb-2 block font-medium text-black dark:text-white">
                   Password
                 </label>
                 <div className="relative">
                   <input
                     type="password"
-                    placeholder="6+ Characters and atleast 1 Capital Letter"
+                    placeholder="Enter your password"
+                    className="w-full rounded-lg border border-stroke bg-transparent py-3 pl-6 pr-10 text-black outline-none focus:border-primary focus-visible:shadow-none dark:border-form-strokedark dark:bg-form-input dark:text-white dark:focus:border-primary"
+                  />
+                  <span className="absolute right-4 top-1/2 -translate-y-1/2">
+                    <LockIcon size={24} />
+                  </span>
+                </div>
+              </div>
+
+              <div className="mb-6">
+                <label className="mb-2 block font-medium text-black dark:text-white">
+                  Re-type Password
+                </label>
+                <div className="relative">
+                  <input
+                    type="password"
+                    placeholder="Retype your password"
                     className="w-full rounded-lg border border-stroke bg-transparent py-3 pl-6 pr-10 text-black outline-none focus:border-primary focus-visible:shadow-none dark:border-form-strokedark dark:bg-form-input dark:text-white dark:focus:border-primary"
                   />
                   <span className="absolute right-4 top-1/2 -translate-y-1/2">
@@ -68,7 +99,7 @@ let Login = () => {
               <div className="mb-5">
                 <input
                   type="submit"
-                  value="Sign In"
+                  value="Sign Up"
                   className="w-full cursor-pointer border border-primary bg-primary p-4 rounded-lg text-white transition hover:bg-opacity-90"
                 />
               </div>
@@ -106,18 +137,18 @@ let Login = () => {
                       </clipPath>
                     </defs>
                   </svg>
-                  <span>Sign In With Google</span>
+                  <span>Sign Up With Google</span>
                 </span>
               </button>
 
               <div className="mt-6 text-center">
                 <p>
-                  Don't have any account?{" "}
+                  Already have an account?{" "}
                   <Link
-                    to="/auth/signup"
+                    to="/auth/login"
                     className="text-primary hover:underline"
                   >
-                    Sign up
+                    Sign In
                   </Link>
                 </p>
               </div>
@@ -128,4 +159,4 @@ let Login = () => {
     </div>
   );
 };
-export default Login;
+export default Signup;
