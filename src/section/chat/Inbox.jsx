@@ -1,6 +1,8 @@
 import User01 from '../../images/user/user-01.png'; 
 import { DotsThreeIcon, PaperPlaneTiltIcon, LinkSimpleIcon, SmileyIcon } from '@phosphor-icons/react';
 import Dropdown from '../../components/Dropdown';
+import EmojiPicker from '../../components/EmojiPicker';
+import React from 'react';
 function Inbox(){
     return (
         <div className="flex h-full flex-col border-l border-stroke p-2 dark:border-strokedark xl:w-3/4">
@@ -98,7 +100,7 @@ function Inbox(){
                                 <LinkSimpleIcon size={20}></LinkSimpleIcon>
                             </button>
                             <button className='hover:text-primary'>
-                                <SmileyIcon size={20}></SmileyIcon>
+                                <EmojiPicker></EmojiPicker>
                             </button>
                         </div>
                     </div>

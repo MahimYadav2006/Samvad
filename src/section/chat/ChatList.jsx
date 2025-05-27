@@ -1,5 +1,5 @@
 import { MagnifyingGlassIcon } from "@phosphor-icons/react";
-
+import react , { useState } from "react";
 
 import User01 from "../../images/user/user-01.png";
 import User02 from "../../images/user/user-02.png";
@@ -58,6 +58,7 @@ const List = [
 
 
 function ChatList(){
+    let [selected,setSelected] = useState(0);
     return (
         <div className="hidden h-full flex-col xl:flex xl:w-1/4">
             <div className="sticky border-b border-stroke px-6 dark:border-strokedark py-7.5 flex flex-row gap-x-4">
@@ -79,7 +80,7 @@ function ChatList(){
 
                 <div className="no-scrollbar overflow-auto max-h-full space-y-2.5">
                     {List.map((object, item) => {
-                        return <div className="flex cursor-pointer items-center rounded px-4 py-2 hover:bg-gray-2 dark:hover:bg-strokedark" key={item}>
+                        return <div className={`flex cursor-pointer items-center rounded px-4 py-2  ${selected === item ? "bg-gray dark:bg-boxdark-2" : "hover:bg-gray-2 dark:hover:bg-strokedark"} `} key={item} onClick={() => {setSelected(item)}}>
                             <div className="relative mr-3.5 h-11 w-full max-w-11 rounded-full">
                                 <img src={object.imgSrc} alt="profile" className="h-full w-full rounded-full object-cover object-center"/>
                                 <span className="absolute bottom-0 right-0 block h-3 w-3 rounded-full border-2 border-gray-2 bg-success"></span>

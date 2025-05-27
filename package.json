@@ -10,8 +10,13 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@emoji-mart/data": "^1.2.1",
+    "@emoji-mart/react": "^1.1.1",
     "@phosphor-icons/react": "^2.1.8",
     "@tailwindcss/vite": "^4.1.7",
+    "emoji-mart": "^5.6.0",
+    "install": "^0.13.0",
+    "npm": "^10.9.2",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-router-dom": "^7.6.0"
