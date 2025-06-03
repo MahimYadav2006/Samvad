@@ -4,26 +4,29 @@ import { toggleAudioModal } from "../redux/slices/app";
 import { AudioRecorder, useAudioRecorder } from "react-audio-voice-recorder";
 
 export default function VoiceRecorder() {
-    const modalRef = useRef(null);
-    const dispatch = useDispatch();
-    const {audio} = useSelector((state)=> state.app.modals);
+  const modalRef = useRef(null);
+  const dispatch = useDispatch();
+  const { audio } = useSelector((state) => state.app.modals);
 
   useEffect(() => {
     const keyHandler = (event) => {
       if (!audio || event.key !== "Escape") return;
-      dispatch(
-        toggleAudioModal(false),
-      );
+      dispatch(toggleAudioModal(false));
     };
     document.addEventListener("keydown", keyHandler);
-
     return () => document.removeEventListener("keydown", keyHandler);
   }, [audio, dispatch]);
 
-  const recorderControls = () => ({
-    noideSupression: true,
-    echoCancellation: true,
-  },(err)=> console.log(err));
+  const recorderControls = useAudioRecorder();
+
+  const addAudioElement = (blob) => {
+    const url = URL.createObjectURL(blob);
+    const audioEl = document.createElement("audio");
+    audioEl.src = url;
+    audioEl.controls = true;
+    const targetContainer = document.getElementById("audio-container");
+    targetContainer.appendChild(audioEl);
+  };
 
   return (
     <div
@@ -35,9 +38,21 @@ export default function VoiceRecorder() {
         ref={modalRef}
         className="md:px-17.5 w-full max-w-142.5 rounded-lg bg-white dark:bg-boxdark md:py-8 px-8 py-12"
       >
-
-        <div className="flex flex-row items-center space-x-2 justify-between mt-4">
-
+        <div id="audio-container" className="flex flex-col space-y-4 items-center">
+          <AudioRecorder
+            showVisualizer={true}
+            onRecordingComplete={addAudioElement}
+            recorderControls={recorderControls}
+            downloadOnSavePress={true}
+          />
+          <button className="w-full bg-primary rounded-lg p-2 text-white hover:bg-opacity-90">
+            Send
+          </button>
+          <button onClick={()=>{
+            dispatch(toggleAudioModal(false));
+          }}  className="w-full border bg-transparent border-red rounded-lg p-2 text-red">
+            Cancel
+          </button>
         </div>
       </div>
     </div>

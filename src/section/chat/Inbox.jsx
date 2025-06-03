@@ -16,6 +16,10 @@ import UserInfo from "./UserInfo";
 import Giphy from "../../components/Giphy";
 import { useDispatch } from "react-redux";
 import { toggleAudioModal } from "../../redux/slices/app";
+import Attachment from "../../components/Attachment";
+import MsgSeparator from "../../components/MsgSeparator";
+import TypingIndicator from "../../components/TypingIndicator";
+import {TextMessage, DocumentMessage, VoiceMessage, MediaMessage} from "../../components/Messages/index";
 
 function Inbox() {
   const dispatch = useDispatch();
@@ -38,7 +42,7 @@ function Inbox() {
 
   return (
     <>
-      <div className={`flex h-full flex-col border-l border-stroke p-2 dark:border-strokedark w-full ${userInfoOpen ? "w-1/2" : "w-3/4"}`}>
+      <div className={`flex h-full flex-col border-l border-stroke p-2 dark:border-strokedark  ${userInfoOpen ? "w-1/2" : "w-3/4"}`}>
         {/* ChatHeader */}
         <div className="sticky flex items-center flex-row justify-between border-b dark:border-strokedark px-6 py-4.5">
           <div className="flex items-center" onClick={handleToggleUserInfo}>
@@ -77,6 +81,8 @@ function Inbox() {
             <p className="text-xs">1:55pm</p>
           </div>
 
+          <TextMessage author="Mahim Yadav" content="Hi There How are you doing man? https://Google.com" read_receipt="read" incoming={false} timestamp={"2:44 pm"}  />
+
           <div className="max-w-125 ml-auto text-right w-fit">
             <div className="rounded-2xl mb-2.5 rounded-br-none bg-primary px-5 py-3 ">
               <p className="text-white">
@@ -85,7 +91,10 @@ function Inbox() {
             </div>
             <p className="text-xs">1:55pm</p>
           </div>
-
+            <MsgSeparator></MsgSeparator>
+            <DocumentMessage author="Mahim Yadav" incoming={true} read_receipt="sent" timestamp="4:23 PM"></DocumentMessage>
+            <VoiceMessage author="Mahim Yadav" incoming={false} read_receipt="read" timestamp="4:23 PM"></VoiceMessage>
+            <MediaMessage assets={[]} author="Mahim Yadav" caption="This Project is really Awesome" incoming={true} read_receipt="sent" timestamp="5:32 PM"></MediaMessage>
           <div className="max-w-125 w-fit">
             <p className="mb-2.5 text-sm font-medium">Andri Thomas</p>
             <div className="rounded-2xl mb-2.5 rounded-tl-none bg-gray px-5 py-3 dark:bg-boxdark-2">
@@ -136,6 +145,8 @@ function Inbox() {
             </div>
             <p className="text-xs">9:00 pm</p>
           </div>
+
+          <TypingIndicator></TypingIndicator>
         </div>
 
         {/* Input Section */}
@@ -156,7 +167,7 @@ function Inbox() {
                   <MicrophoneIcon size={20} onClick={handleMicClick} ></MicrophoneIcon>
                 </button>
                 <button className="hover:text-primary">
-                  <LinkSimpleIcon size={20}></LinkSimpleIcon>
+                  <Attachment size={20}></Attachment>
                 </button>
                 <button className="hover:text-primary" onClick={handleToggleGif}>
                   <GifIcon size={20}></GifIcon>
