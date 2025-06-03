@@ -1,7 +1,7 @@
 import { react, useEffect } from "react";
 import { Route, Routes } from "react-router-dom";
 import Messages from "./pages/Messages.jsx";
-import Login from "./pages/auth/login.jsx";
+import Login from "./pages/auth/Login.jsx";
 import Signup from "./pages/auth/Signup.jsx";
 import Verification from "./pages/auth/Verification.jsx";
 
