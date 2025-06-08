@@ -1,12 +1,13 @@
 import Logo from "../../components/Logo";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import LoginImagePath from "../../images/auth/login.svg";
 import { EnvelopeSimpleIcon, LockIcon } from "@phosphor-icons/react";
 let Login = () => {
+  const navigate= useNavigate();
   return (
     <div className="border border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark h-screen">
-      <div className="flex flex-wrap items-center h-full">
-        <div className="hidden w-full xl:block xl:w-1/2">
+      <div className="flex h-full min-h-screen w-full">
+        <div className="block w-full md:w-1/2 xl:block xl:w-1/2">
           <div className="py-17.5 px-26 text-center">
             <Link to="/" className="mb-5.5 inline-block">
               <Logo />
@@ -68,6 +69,7 @@ let Login = () => {
               <div className="mb-5">
                 <input
                   type="submit"
+                  onClick={()=>navigate("/dashboard")}
                   value="Sign In"
                   className="w-full cursor-pointer border border-primary bg-primary p-4 rounded-lg text-white transition hover:bg-opacity-90"
                 />

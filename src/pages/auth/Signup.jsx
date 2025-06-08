@@ -1,8 +1,9 @@
 import Logo from "../../components/Logo";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import SignupImagePath from "../../images/auth/signup.svg";
 import { UserIcon, EnvelopeSimpleIcon, LockIcon } from "@phosphor-icons/react";
 let Signup = () => {
+  const navigate= useNavigate();
   return (
     <div className="border border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark h-auto">
       <div className="flex flex-wrap items-center h-full">
@@ -99,6 +100,7 @@ let Signup = () => {
               <div className="mb-5">
                 <input
                   type="submit"
+                  onClick={()=>navigate("/dashboard")}
                   value="Sign Up"
                   className="w-full cursor-pointer border border-primary bg-primary p-4 rounded-lg text-white transition hover:bg-opacity-90"
                 />

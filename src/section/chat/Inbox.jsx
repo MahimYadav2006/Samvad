@@ -20,12 +20,15 @@ import Attachment from "../../components/Attachment";
 import MsgSeparator from "../../components/MsgSeparator";
 import TypingIndicator from "../../components/TypingIndicator";
 import {TextMessage, DocumentMessage, VoiceMessage, MediaMessage} from "../../components/Messages/index";
+import VideoRoom from "../../components/VideoRoom";
+import AudioRoom from "../../components/AudioRoom";
 
 function Inbox() {
   const dispatch = useDispatch();
   const [userInfoOpen, setUserInfoOpen] = useState(false);
   const [gifOpen,setGifOpen] = useState(false);
-
+  const [videoCall, setVideoCall] = useState(false);
+  const [audioCall, setAudioCall] = useState(false);
   const handleToggleGif = (e) =>{
     e.preventDefault();
     setGifOpen((prev) => !prev);
@@ -38,6 +41,16 @@ function Inbox() {
   const handleMicClick = (e)=>{
     e.preventDefault();
     dispatch(toggleAudioModal(true));
+  };
+
+  const handleToggleVideoCall = (e)=>{
+    e.preventDefault();
+    setVideoCall((prev)=>!prev);
+  };
+
+  const handleToggleAudioCall = (e)=>{
+    e.preventDefault();
+    setAudioCall((prev)=>!prev);
   };
 
   return (
@@ -61,10 +74,10 @@ function Inbox() {
             </div>
           </div>
           <div className="flex flex-row align-center space-x-4">
-            <button>
+            <button onClick={handleToggleVideoCall}>
               <VideoCameraIcon size={24}></VideoCameraIcon>
-            </button>
-            <button>
+            </button >
+            <button onClick={handleToggleAudioCall}>
               <PhoneCallIcon size={24}></PhoneCallIcon>
             </button>
             <Dropdown></Dropdown>
@@ -185,6 +198,9 @@ function Inbox() {
           {/* <Giphy></Giphy> */}
         </div>
       </div>
+
+      {videoCall && <VideoRoom open={videoCall} handleClose={handleToggleVideoCall}/>}
+      {audioCall && <AudioRoom open={audioCall} handleClose={handleToggleAudioCall}/>}
 
       {userInfoOpen && (
         <div className="w-1/4">

@@ -1,6 +1,7 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import Logo from "../../components/Logo";
 function Verification() {
+  const navigate= useNavigate();
   return (
     <div className="overflow-hidden px-4 dark:bg-boxdark-2 sm:px-8">
       <div className="flex h-screen flex-col items-center justify-center overflow-hidden">
@@ -36,7 +37,7 @@ function Verification() {
                     </div>
                   </p>
 
-                  <button className="flex w-full justify-center rounded-md bg-primary p-[13px] font-bold text-gray hover:bg-opacity-90">Verify</button>
+                  <button className="flex w-full justify-center rounded-md bg-primary p-[13px] font-bold text-gray hover:bg-opacity-90" onClick={()=>navigate("/dashboard")}>Verify</button>
                   <span className="mt-5 block text-red">
                     Don't share this code with anyone!
                   </span>

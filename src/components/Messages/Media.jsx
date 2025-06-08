@@ -1,5 +1,6 @@
 import { CheckIcon, ChecksIcon } from '@phosphor-icons/react'
 import React from 'react'
+import MediaMsgGrid from '../MediaMsgGrid';
 
 export default function Media({
   incoming,
@@ -14,6 +15,7 @@ export default function Media({
       <p className='mb-2.5 text-sm font-medium'>{author}</p>
       <div className='mb-2.5 rounded-2xl rounded-tl-none bg-gray px-5 py-3 dark:bg-boxdark-2 space-y-2'>
         {/* Message Media Grid */}
+        <MediaMsgGrid incoming={incoming}/>
         <p>{caption}</p>
       </div>
       <p className='text-xs'>{timestamps}</p>
@@ -22,6 +24,7 @@ export default function Media({
     <div className="max-w-125 ml-auto">
       <div className='mb-2.5 rounded-2xl rounded-br-none bg-primary px-5 py-3 space-y-2'>
         {/* Message Media Grid */}
+        <MediaMsgGrid incoming={incoming}/>
         <p className='text-white'>{caption}</p>
       </div>
       <div className="flex flex-row items-center justify-end space-x-2">
