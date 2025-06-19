@@ -1,13 +1,15 @@
 import React from 'react'
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import ProfileForm from '../section/Profile/ProfileForm';
+import UpdatePasswordForm from '../section/Profile/UpdatePasswordForm';
 
 export default function ProfilePage() {
   const [openTab,setOpenTab] = useState(1);
   const activeClass = "text-primary border-primary";
   const inactiveClass = "border-transparent";
   return (
-    <div className='w-full rounded-sm border border-stroke bg-white py-7.5 px-20 shadow-default dark:border-strokedark dark:bg-boxdark'>
+    <div className='w-full min-h-screen overflow-auto rounded-sm border border-stroke bg-white py-7.5 px-20 shadow-default dark:border-strokedark dark:bg-boxdark'>
       {/* Buttons for tabs */}
 
       <div className="mb-6 flex flex-wrap gap-5 border-b border-stroke dark:border-strokedark sm:gap-10">
@@ -24,12 +26,12 @@ export default function ProfilePage() {
       <div>
         <div className={`${openTab === 1 ? "block" : "hidden"}`}>
           {/* Profile Form */}
-          Profile
+          <ProfileForm></ProfileForm>
         </div>
 
         <div className={`${openTab === 2 ? "block" : "hidden"}`}>
           {/* Update Password Form */}
-          Update Password
+          <UpdatePasswordForm></UpdatePasswordForm>
         </div>
       </div>
 

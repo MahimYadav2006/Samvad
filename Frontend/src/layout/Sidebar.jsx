@@ -75,7 +75,7 @@ import {
           <DarkModeSwitcher></DarkModeSwitcher>
           < button  onClick={()=>{
             navigate("/auth/login");
-          }}  className="flex flex-row items-center justify-center border rounded-md border-stroke p-2 dark:border-strokedark hover:bg-stone-100 dark:hover:bg-stone-700 cursor-pointer">
+          }}  className="w-full flex flex-row items-center justify-center border rounded-md border-stroke p-2 dark:border-strokedark hover:bg-stone-100 dark:hover:bg-stone-700 cursor-pointer">
             <SignOutIcon size={24} />
           </button>
         </div>
