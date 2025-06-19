@@ -1,8 +1,6 @@
 const express = require("express");
 const morgan = require("morgan");
-
 const rateLimit = require("express-rate-limit");
-
 const helmet = require("helmet");
 const mongoSanitize = require("express-mongo-sanitize");
 const xss = require("xss-clean");
@@ -10,6 +8,8 @@ const bodyParser = require("body-parser");
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
 const session = require("cookie-session");
+
+const routes = require("./routes/index");
 
 const app = express();
 
@@ -42,5 +42,5 @@ app.use(xss()); // To sanitize the data from XSS attacks
 
 // ToDO Add Routes Now
 
-
+app.use(routes);
 module.exports = app;

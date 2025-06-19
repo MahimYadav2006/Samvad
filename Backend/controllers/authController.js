@@ -7,6 +7,7 @@ const promisify = require("util");
 
 // Importing Models
 import User from '../Models/User';
+import Mailer from '../services/mailer';
 
 
 // Functions
@@ -56,6 +57,7 @@ exports.sendOTP = catchAsync(async(req,res,next)=>{
     await user.save({});
 
     // Send OTP Via Mail to User
+    Mailer({name: user.name, email: user.email, otp: new_otp});
 
     // Send status
     res.status(200).json({
@@ -106,7 +108,7 @@ exports.verifyOTP = catchAsync(async(req,res,next)=>{
 });
 
 // Resend OTP
-exports.resendOTP = catchAsync(async (req,res,next)=>{
+exports.resendOTP = catchAsync(async (req,res,next)=>{ 
     const {email} = req.body;
     const user = await User.findOne({email,});
 
@@ -131,8 +133,7 @@ exports.resendOTP = catchAsync(async (req,res,next)=>{
     user.otp = new_otp;
     await user.save({});
 
-    // TODO -> Send OTP Via Mail
-
+    Mailer({name: user.name, email: user.email, otp: new_otp});
 
     return res.status(200).json({
         status: "success",

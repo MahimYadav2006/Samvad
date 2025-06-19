@@ -15,12 +15,34 @@ const registerSocketServer = (server) => {
         console.log("A user connected");
         console.log(socket.id);
 
-        // New Connection Handler
-    })
+        // TODO: New Connection Handler
 
-    setInterval(()=>{
-        // emit online users
-    },[1000*8])
+        // TODO: Disconnet handler
+        socket.on("disconnect",()=>{
+
+        })
+
+        // TODO: newMessageHandler
+        socket.on("new-messgage",(data)=>{
+
+        });
+
+        // TODO: chatHistoryHandler
+        socket.on("direct-chat-history",(data)=>{
+
+        })
+
+        // TODO: Start typing handler
+        socket.on("start-typing",(data)=>{
+
+        });
+
+        // TODO: Stop typing handler
+        socket.on("stop-typing",(data)=>{
+            
+        });
+        
+    })
 
     // return io;
 }

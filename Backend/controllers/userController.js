@@ -96,11 +96,47 @@ exports.startConvrsation(async (req,res,next)=>{
         participants: {$all: [userId, _id]},
     }).populate("messages").populate("participants");
 
-    
-})
+    if(conversation){
+        return res.status(200).json({
+            status: "success",
+            message: "Conversation Found Successfully",
+            data: {
+                conversation,
+            }
+        });
+    }
+    else{
+        let newConversation = await Conversation.create({
+            participants: [_id, userId],
+        });
+
+        newConversation = await Conversation.findById(newConversation._id).populate("messages").populate("participants");
+        
+        return res.status(201).json({ // New record created - 201
+            status: "success",
+            message: "New Conversation Created Successfully",
+            data: {
+                conversation: newConversation,
+            }
+        });
+    }
+});
 
 
 // GET CONVERSATIONS
+exports.getConversations = catchAsync(async (req,res,next)=>{  
+    const {_id} = req.user;
 
+    const conversations = await Conversation.find({
+        participants: {$in: [_id],},
+    }).populate("messages").populate("participants");
 
+    res.status(200).json({
+        status: "success",
+        message: "Conversations Found Successfully",
+        data: {
+            conversations,
+        }
+    });
+});
 
