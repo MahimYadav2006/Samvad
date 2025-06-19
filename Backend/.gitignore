@@ -1,0 +1,52 @@
+# Node modules
+node_modules/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Runtime data
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# dotenv environment variables
+.env
+.env.*.local
+
+# OS-specific
+.DS_Store
+Thumbs.db
+
+# IDEs/editors
+.vscode/
+.idea/
+*.sw?
+
+# Coverage reports
+coverage/
+*.lcov
+
+# Build output
+dist/
+build/
+
+# Optional npm cache
+.npm/
+
+# Optional yarn cache
+.yarn/
+.yarn/cache/
+.yarn/unplugged/
+.yarn/build-state.yml
+.pnp.*
+
+# Misc
+*.tgz
+*.gz
+*.zip
+*.log.*

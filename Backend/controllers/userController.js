@@ -28,15 +28,46 @@ exports.updateMe = catchAsync(async (req,res,next)=>{
             user: updateUser,
         }
     });
-})
+});
 
 
 // UPDATE AVATAR
+exports.updateAvatar = catchAsync(async (req,res,next)=>{
+    const {avatar} = req.body;
+    const {_id} = req.user;
 
+    const updateUser = await User.findByIdAndUpdate(_id,{avatar},{new:true, validateModifiedOnly: true});
+    res.status(200).json({
+        status: "success",
+        message: "Avatar Updated Successfully",
+        data:{
+            user: updateUser,
+        }
+    });
+});
 
 
 // UPDATE PASSWORD
+exports.updatePassword = catchAsync(async (req,res,next)=>{
+    const {currentPassword,newPassword} = req.body;
+    const {_id} = req.user;
 
+    const user = User.findById(_id).select("+password");
+    if(!user || !(await user.correctPassword(currentPassword, user.password))){
+        return res.status(400).json({
+            status: "Error",
+            message: "Invalid User or Password",
+        });
+    }
+
+    user.password = newPassword;
+    user.passwordChangedAt = Date.now();
+    await user.save({});
+    return res.status(200).json({
+        status: "success",
+        message: "Password Updated Successfully",
+    });
+})
 
 
 // GET USERS
