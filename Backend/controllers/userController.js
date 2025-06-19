@@ -1,4 +1,5 @@
 const User = require("../Models/User");
+const Conversation = require("../Models/Conversation");
 const catchAsync = require("../utilities/catchAsync");
 
 // GET ME
@@ -71,11 +72,32 @@ exports.updatePassword = catchAsync(async (req,res,next)=>{
 
 
 // GET USERS
+exports.getUsers = catchAsync(async (req,res,next)=>{
+    const {_id} = req.user;
+    const other_verified_users = User.find({_id : {$ne: _id}, verified: true}).select("name avatar _id status");
 
+    res.status(200).json({
+        status: "success",
+        message: "Users Found Successfully",
+        data:{
+            users: other_verified_users,
+        }
+    });
+});
 
 
 // START CONVERSATIONS
+exports.startConvrsation(async (req,res,next)=>{
+    const {userId} = req.body; // Other person's Id
+    const {_id} = req.user; // Our own Id
 
+    // Check if an conversation between both users alreasy exist
+    let conversation = await Conversation.findOne({
+        participants: {$all: [userId, _id]},
+    }).populate("messages").populate("participants");
+
+    
+})
 
 
 // GET CONVERSATIONS
