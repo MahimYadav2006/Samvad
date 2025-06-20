@@ -1,6 +1,6 @@
 const User = require("../Models/User");
-const Conversation = require("../Models/Conversation");
 const catchAsync = require("../utilities/catchAsync");
+const Conversation = require("../models/Conversation");
 
 // GET ME
 exports.getMe = catchAsync(async (req,res,next)=>{
@@ -64,7 +64,7 @@ exports.updatePassword = catchAsync(async (req,res,next)=>{
     user.password = newPassword;
     user.passwordChangedAt = Date.now();
     await user.save({});
-    return res.status(200).json({
+    res.status(200).json({
         status: "success",
         message: "Password Updated Successfully",
     });
@@ -87,7 +87,7 @@ exports.getUsers = catchAsync(async (req,res,next)=>{
 
 
 // START CONVERSATIONS
-exports.startConvrsation(async (req,res,next)=>{
+exports.startConversation = catchAsync(async (req,res,next)=>{
     const {userId} = req.body; // Other person's Id
     const {_id} = req.user; // Our own Id
 
@@ -97,7 +97,7 @@ exports.startConvrsation(async (req,res,next)=>{
     }).populate("messages").populate("participants");
 
     if(conversation){
-        return res.status(200).json({
+        res.status(200).json({
             status: "success",
             message: "Conversation Found Successfully",
             data: {
@@ -112,7 +112,7 @@ exports.startConvrsation(async (req,res,next)=>{
 
         newConversation = await Conversation.findById(newConversation._id).populate("messages").populate("participants");
         
-        return res.status(201).json({ // New record created - 201
+        res.status(201).json({ // New record created - 201
             status: "success",
             message: "New Conversation Created Successfully",
             data: {

@@ -6,8 +6,8 @@ const promisify = require("util");
 
 
 // Importing Models
-import User from '../Models/User';
-import Mailer from '../services/mailer';
+const User = require("../Models/User");
+const Mailer = require("../services/mailer");
 
 
 // Functions
@@ -27,16 +27,20 @@ exports.register = catchAsync(async(req,res,next)=>{
             message: "User already exists and verified ",
         });
     }
-    else if(existingUser && !existingUser.verified){
-        // delete the existing user
-        await User.findOneAndDelete({email: email});
+    let new_user;
+    if (existingUser && existingUser.verified) {
+        return res.status(400).json({
+            status: "error",
+            message: "User already exists and verified ",
+        });
+    } else if (existingUser && !existingUser.verified) {
+        await User.findOneAndDelete({ email: email });
     }
-    else{
-        const new_user = await User.create({name,email,password});
-    }
-
+    new_user = await User.create({ name, email, password });
     req.userId = new_user._id;
     next();
+
+
 });
 
 // Send OTP
@@ -135,7 +139,7 @@ exports.resendOTP = catchAsync(async (req,res,next)=>{
 
     Mailer({name: user.name, email: user.email, otp: new_otp});
 
-    return res.status(200).json({
+    res.status(200).json({
         status: "success",
         message: "OTP Sent Successfully!",
     });
@@ -206,7 +210,7 @@ exports.protect = catchAsync(async (req,res,next)=>{
         console.log("Message from protect of authcontroller: Value of decoded is ",decoded);
 
         // Step 3-> Check if User Still Exist
-        const this_user = User.findById(decoded.userId);
+        const this_user = await User.findById(decoded.userId);
         if(!this_user){
             return res.status(401).json({
                 message: "The user belonging to this token no longer exists",
@@ -214,7 +218,7 @@ exports.protect = catchAsync(async (req,res,next)=>{
         }
 
         // Step 4-> check if user changed password aftr the token was issued
-        if(this_user.changedPasswordAfter(decoded.iat)){
+        if(await this_user.changedPasswordAfter(decoded.iat)){
             return res.status(401).json({
                 status: "error",
                 message: "Password was changed recently. Please Login Again",

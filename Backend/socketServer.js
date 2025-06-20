@@ -1,4 +1,12 @@
 const authSocket = require('./middleware/authsocket');
+const newConnectionHandler = require('./socketHandlers/newConnectionHandler');
+const disconnectHandler = require('./socketHandlers/disconnectHandler');
+const startTypingHandler = require('./socketHandlers/startTypingHandler');
+const stopTypingHandler = require('./socketHandlers/stopTypingHandler');
+const chatHistoryHandler = require('./socketHandlers/getMessageHistory');
+const newMessageHandler = require('./socketHandlers/newMessageHandler').default;
+
+
 const registerSocketServer = (server) => {
     const io = require('socket.io')(server,{
         cors:{
@@ -12,34 +20,35 @@ const registerSocketServer = (server) => {
     })
 
     io.on('connection',(socket)=>{
-        console.log("A user connected");
+        console.log("Inside sockerServer.js , A user connected");
         console.log(socket.id);
 
-        // TODO: New Connection Handler
+        // New Connection Handler
+        newConnectionHandler(socket,io);
 
-        // TODO: Disconnet handler
+        //  Disconnet handler
         socket.on("disconnect",()=>{
-
+            disconnectHandler(socket,io);
         })
 
-        // TODO: newMessageHandler
+        // newMessageHandler
         socket.on("new-messgage",(data)=>{
-
+            newMessageHandler(socket,data,io);
         });
 
-        // TODO: chatHistoryHandler
+        //chatHistoryHandler
         socket.on("direct-chat-history",(data)=>{
-
+            chatHistoryHandler(socket,data);
         })
 
-        // TODO: Start typing handler
+        // Start typing handler
         socket.on("start-typing",(data)=>{
-
+            startTypingHandler(socket,data,io);
         });
 
-        // TODO: Stop typing handler
+        //Stop typing handler
         socket.on("stop-typing",(data)=>{
-            
+            stopTypingHandler(socket,data,io);
         });
         
     })

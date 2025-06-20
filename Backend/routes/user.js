@@ -9,7 +9,7 @@ router.patch('/me',userController.updateMe);
 router.patch('/update-avatar', userController.updateAvatar);
 router.patch('/update-password',  userController.updatePassword);
 router.get('/users',  userController.getUsers);
-router.post('start-conversation',  userController.startConversation);
+router.post('/start-conversation',  userController.startConversation);
 router.get('/conversations',userController.getConversations);
 
 module.exports = router;

@@ -1,6 +1,6 @@
 const nodemailer = require('nodemailer');
 const dotenv = require('dotenv');
-const OTPTemplate = require('../templates/OTP');
+const OTPTemplate = require('../template/OTP');
 
 
 dotenv.config({path: "../config.env"});
@@ -19,7 +19,7 @@ const transporter = nodemailer.createTransport({
     },
 });
 
-const Mailer =  async (async ({name,otp,email})=>{
+const Mailer = (async({name,otp,email})=>{
     const mailOptions = {
         to: email,
         subject: 'Verify your Samvad Account',
