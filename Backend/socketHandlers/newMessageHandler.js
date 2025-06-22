@@ -9,7 +9,7 @@ const newMessageHandler = async (socket,data,io)=>{
 
     try{
         // Find conversation by conversation Id
-        const conversation = findById(conversationId);
+        const conversation = Conversation.findById(conversationId);
         if(!conversation){
             // If conversation not found, send an error
             socket.emit("error", {
@@ -19,7 +19,7 @@ const newMessageHandler = async (socket,data,io)=>{
         }
 
         // Create a new messgae using the message model
-        const newMessage = await create({author,content,media,audioUrl,document,type,giphyUrl});
+        const newMessage = await Message.create({author,content,media,audioUrl,document,type,giphyUrl});
 
         // Push the message id to the messages array in the conversation object
         conversation.messages.push(newMessage._id);
