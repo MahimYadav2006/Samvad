@@ -2,8 +2,47 @@ import Logo from "../../components/Logo";
 import { Link, useNavigate } from "react-router-dom";
 import LoginImagePath from "../../images/auth/login.svg";
 import { EnvelopeSimpleIcon, LockIcon } from "@phosphor-icons/react";
+import * as yup from "yup";
+import { useForm } from "react-hook-form";
+import { yupResolver } from "@hookform/resolvers/yup";
+import { useSelector } from "react-redux";
+import { useDispatch } from "react-redux";
+import { LoginUser } from "../../redux/slices/auth";
+
+// Validation Schema
+const schema = yup.object().shape({
+  email: yup
+    .string()
+    .email("Please enter a valid email")
+    .required("Email is required"),
+  password: yup
+    .string()
+    .min(6, "Password must be at least 6 characters")
+    .required("Password is required"),
+});
+
 let Login = () => {
-  const navigate= useNavigate();
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const {isLoading} = useSelector((state)=> state.auth);
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors , isSubmitting},
+  } = useForm({
+    resolver: yupResolver(schema),
+    defaultValues: {
+      email: "",
+      password: "",
+    },
+  });
+
+  const onSubmit = (data) => {
+    console.log(data, "Form data: login");
+    dispatch(LoginUser(data,navigate));
+  };
+
   return (
     <div className="border border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark h-screen">
       <div className="flex h-full min-h-screen w-full">
@@ -33,7 +72,8 @@ let Login = () => {
               Sign In to Samvad
             </h2>
 
-            <form>
+            <form onSubmit={handleSubmit(onSubmit)} className="mb-8">
+              {/* Email */}
               <div className="mb-4">
                 <label className="mb-2 block font-medium text-black dark:text-white">
                   Email
@@ -41,15 +81,24 @@ let Login = () => {
                 <div className="relative">
                   <input
                     type="email"
+                    {...register("email")}
                     placeholder="Enter your email"
-                    className="w-full rounded-lg border border-stroke bg-transparent py-3 pl-6 pr-10 text-black outline-none focus:border-primary focus-visible:shadow-none dark:border-form-strokedark dark:bg-form-input dark:text-white dark:focus:border-primary"
+                    className={`w-full rounded-lg border bg-transparent py-3 pl-6 pr-10 text-black outline-none  focus-visible:shadow-none  dark:bg-form-input dark:text-white  ${
+                      errors.email
+                        ? "border-red-500 focus:border-red"
+                        : "border-stroke dark:border-form-strokedark focus:border-primary dark:focus:border-primary"
+                    }`}
                   />
                   <span className="absolute right-4 top-1/2 -translate-y-1/2">
                     <EnvelopeSimpleIcon size={24} />
                   </span>
                 </div>
+                {errors.email && (
+                  <p className="text-red text-sm">{errors.email.message}</p>
+                )}
               </div>
 
+              {/*  Password */}
               <div className="mb-6">
                 <label className="mb-2 block font-medium text-black dark:text-white">
                   Password
@@ -57,22 +106,34 @@ let Login = () => {
                 <div className="relative">
                   <input
                     type="password"
+                    {...register("password")}
                     placeholder="6+ Characters and atleast 1 Capital Letter"
-                    className="w-full rounded-lg border border-stroke bg-transparent py-3 pl-6 pr-10 text-black outline-none focus:border-primary focus-visible:shadow-none dark:border-form-strokedark dark:bg-form-input dark:text-white dark:focus:border-primary"
+                    className={`w-full rounded-lg border  bg-transparent py-3 pl-6 pr-10 text-black outline-none focus-visible:shadow-none dark:bg-form-input dark:text-white  ${
+                      errors.password
+                        ? "border-red-500 focus:border-red"
+                        : "border-stroke dark:border-form-strokedark focus:border-primary dark:focus:border-primary"
+                    }`}
                   />
                   <span className="absolute right-4 top-1/2 -translate-y-1/2">
                     <LockIcon size={24} />
                   </span>
                 </div>
+                {errors.password && (
+                  <p className="text-red text-sm">{errors.password.message}</p>
+                )}
               </div>
-
+              
+              {/* Submit Button */}
               <div className="mb-5">
-                <input
+                <button
                   type="submit"
-                  onClick={()=>navigate("/dashboard")}
+                  // onClick={() => navigate("/dashboard")}
+                  disabled={isSubmitting || isLoading}
                   value="Sign In"
                   className="w-full cursor-pointer border border-primary bg-primary p-4 rounded-lg text-white transition hover:bg-opacity-90"
-                />
+                >
+                  {isSubmitting || isLoading ? 'Submitting your data' : "Sign In" }
+                </button>
               </div>
 
               <button className="flex w-full items-center justify-center gap-3.5 border border-stroke bg-gray p-4 rounded-lg hover:bg-opacity-50 dark:border-strokedark dark:bg-meta-4 dark:hover:bg-opacity-50 transition">

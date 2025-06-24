@@ -7,40 +7,54 @@ const xss = require("xss-clean");
 const bodyParser = require("body-parser");
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
-const session = require("cookie-session");
 
 const routes = require("./routes/index");
 
 const app = express();
 
-app.use(
-    cors({
-        origin: "*", // Allow all domains to access the server
-        methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"], // Allow all methods
-        credentials: true, // Allow credentials
-    })
-)
+// Enable CORS
+app.use(cors({
+    origin: "*", // Allow all origins
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    credentials: true
+}));
 
-app.use(cookieParser());
-app.use(express.json({limit: "10kb"})); // Used to parse the json data with max size limit of 10kb
-
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({extended: true}));
+// Security Headers
 app.use(helmet());
+
+// Logger
 app.use(morgan("dev"));
 
+// Parse JSON and URL-encoded data
+app.use(express.json({ limit: "10kb" }));
+app.use(express.urlencoded({ extended: true }));
+
+// Cookie Parser
+app.use(cookieParser());
+
+// Optional: If you still need bodyParser separately
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
+
+// Rate Limiting
 const limiter = rateLimit({
-    max:3000,
-    windowMs: 60 * 60 * 1000, // At max 3000 request per hour
+    max: 3000,
+    windowMs: 60 * 60 * 1000, // 1 hour
     message: "Too many requests from this IP, please try again in an hour!"
 });
-
 app.use("/api", limiter);
-app.use(express.urlencoded({extended: true}));
-app.use(mongoSanitize()); // To sanitize the data from mongoDB
-app.use(xss()); // To sanitize the data from XSS attacks
 
-// ToDO Add Routes Now
+// Sanitize data against NoSQL injection (avoid `req.query` error)
+app.use((req, res, next) => {
+    if (req.body) mongoSanitize.sanitize(req.body);
+    if (req.params) mongoSanitize.sanitize(req.params);
+    next();
+});
 
+// Sanitize against XSS attacks
+// app.use(xss());
+
+// Mount Routes
 app.use(routes);
+
 module.exports = app;

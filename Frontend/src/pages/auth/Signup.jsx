@@ -2,8 +2,52 @@ import Logo from "../../components/Logo";
 import { Link, useNavigate } from "react-router-dom";
 import SignupImagePath from "../../images/auth/signup.svg";
 import { UserIcon, EnvelopeSimpleIcon, LockIcon } from "@phosphor-icons/react";
+import * as yup from "yup";
+import { useForm } from "react-hook-form";
+import { yupResolver } from "@hookform/resolvers/yup";
+import { useDispatch, useSelector } from "react-redux";
+import { RegisterUser } from "../../redux/slices/auth";
+
+// Validation Schema
+const schema = yup.object().shape({
+  name: yup.string().required("Name is required"),
+  email: yup
+    .string()
+    .email("Please enter a valid email")
+    .required("Email is required"),
+  password: yup
+    .string()
+    .min(6, "Password must be at least 6 characters")
+    .required("Password is required"),
+  confirmPassword: yup.string()
+    .oneOf([yup.ref("password"),null], "Passwords must match")
+    .required("Confirm Password is required"),
+});
+
 let Signup = () => {
-  const navigate= useNavigate();
+  const navigate = useNavigate();
+  const { isLoading } = useSelector((state) => state.auth);
+  const dispatch = useDispatch();
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm({
+    resolver: yupResolver(schema),
+    defaultValues: {
+      name: "",
+      email: "",
+      password: "",
+      confirmPassword: "",
+    },
+  });
+
+  const onSubmit = (data) => {
+    console.log(data, "Form data: Signup");
+
+    dispatch(RegisterUser(data,navigate));
+  };
+
   return (
     <div className="border border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark h-auto">
       <div className="flex flex-wrap items-center h-full">
@@ -32,7 +76,8 @@ let Signup = () => {
             <h2 className="mb-8 text-2xl font-bold text-black dark:text-white sm:text-title-xl2">
               Sign Up to Samvad
             </h2>
-            <form>
+            <form onSubmit={handleSubmit(onSubmit)}>
+              {/* Name */}
               <div className="mb-4">
                 <label className="mb-2 block font-medium text-black dark:text-white">
                   Name
@@ -40,15 +85,24 @@ let Signup = () => {
                 <div className="relative">
                   <input
                     type="text"
+                    {...register("name")}
                     placeholder="Enter your full name"
-                    className="w-full rounded-lg border border-stroke bg-transparent py-3 pl-6 pr-10 text-black outline-none focus:border-primary focus-visible:shadow-none dark:border-form-strokedark dark:bg-form-input dark:text-white dark:focus:border-primary"
+                    className={`w-full rounded-lg border bg-transparent py-3 pl-6 pr-10 text-black outline-none  focus-visible:shadow-none  dark:bg-form-input dark:text-white  ${
+                      errors.email
+                        ? "border-red-500 focus:border-red"
+                        : "border-stroke dark:border-form-strokedark focus:border-primary dark:focus:border-primary"
+                    }`}
                   />
                   <span className="absolute right-4 top-1/2 -translate-y-1/2">
                     <UserIcon size={24} />
                   </span>
                 </div>
+                {errors.name && (
+                  <p className="text-red text-sm">{errors.name.message}</p>
+                )}
               </div>
 
+              {/* Email */}
               <div className="mb-4">
                 <label className="mb-2 block font-medium text-black dark:text-white">
                   Email
@@ -56,15 +110,24 @@ let Signup = () => {
                 <div className="relative">
                   <input
                     type="email"
+                    {...register("email")}
                     placeholder="Enter your email"
-                    className="w-full rounded-lg border border-stroke bg-transparent py-3 pl-6 pr-10 text-black outline-none focus:border-primary focus-visible:shadow-none dark:border-form-strokedark dark:bg-form-input dark:text-white dark:focus:border-primary"
+                    className={`w-full rounded-lg border bg-transparent py-3 pl-6 pr-10 text-black outline-none  focus-visible:shadow-none  dark:bg-form-input dark:text-white  ${
+                      errors.email
+                        ? "border-red-500 focus:border-red"
+                        : "border-stroke dark:border-form-strokedark focus:border-primary dark:focus:border-primary"
+                    }`}
                   />
                   <span className="absolute right-4 top-1/2 -translate-y-1/2">
                     <EnvelopeSimpleIcon size={24} />
                   </span>
                 </div>
+                {errors.email && (
+                  <p className="text-red text-sm">{errors.email.message}</p>
+                )}
               </div>
 
+              {/* Password */}
               <div className="mb-4">
                 <label className="mb-2 block font-medium text-black dark:text-white">
                   Password
@@ -72,15 +135,24 @@ let Signup = () => {
                 <div className="relative">
                   <input
                     type="password"
+                    {...register("password")}
                     placeholder="Enter your password"
-                    className="w-full rounded-lg border border-stroke bg-transparent py-3 pl-6 pr-10 text-black outline-none focus:border-primary focus-visible:shadow-none dark:border-form-strokedark dark:bg-form-input dark:text-white dark:focus:border-primary"
+                    className={`w-full rounded-lg border bg-transparent py-3 pl-6 pr-10 text-black outline-none  focus-visible:shadow-none  dark:bg-form-input dark:text-white  ${
+                      errors.email
+                        ? "border-red-500 focus:border-red"
+                        : "border-stroke dark:border-form-strokedark focus:border-primary dark:focus:border-primary"
+                    }`}
                   />
                   <span className="absolute right-4 top-1/2 -translate-y-1/2">
                     <LockIcon size={24} />
                   </span>
                 </div>
+                {errors.password && (
+                  <p className="text-red text-sm">{errors.password.message}</p>
+                )}
               </div>
 
+              {/* Confirm Password */}
               <div className="mb-6">
                 <label className="mb-2 block font-medium text-black dark:text-white">
                   Re-type Password
@@ -88,24 +160,38 @@ let Signup = () => {
                 <div className="relative">
                   <input
                     type="password"
+                    {...register("confirmPassword")}
                     placeholder="Retype your password"
-                    className="w-full rounded-lg border border-stroke bg-transparent py-3 pl-6 pr-10 text-black outline-none focus:border-primary focus-visible:shadow-none dark:border-form-strokedark dark:bg-form-input dark:text-white dark:focus:border-primary"
+                    className={`w-full rounded-lg border bg-transparent py-3 pl-6 pr-10 text-black outline-none  focus-visible:shadow-none  dark:bg-form-input dark:text-white  ${
+                      errors.email
+                        ? "border-red-500 focus:border-red"
+                        : "border-stroke dark:border-form-strokedark focus:border-primary dark:focus:border-primary"
+                    }`}
                   />
                   <span className="absolute right-4 top-1/2 -translate-y-1/2">
                     <LockIcon size={24} />
                   </span>
                 </div>
+                {errors.confirmPassword && (
+                  <p className="text-red text-sm">
+                    {errors.confirmPassword.message}
+                  </p>
+                )}
               </div>
 
+              {/* Submit Button */}
               <div className="mb-5">
-                <input
+                <button
                   type="submit"
-                  onClick={()=>navigate("/dashboard")}
-                  value="Sign Up"
+                  // onClick={()=>navigate("/dashboard")}
+                  disabled={isSubmitting || isLoading}
                   className="w-full cursor-pointer border border-primary bg-primary p-4 rounded-lg text-white transition hover:bg-opacity-90"
-                />
+                >
+                  {isSubmitting || isLoading ? "Submitting.." : "Sign Up"}
+                </button>
               </div>
 
+              {/* Google Submit Button - TODO Add OAuth */}
               <button className="flex w-full items-center justify-center gap-3.5 border border-stroke bg-gray p-4 rounded-lg hover:bg-opacity-50 dark:border-strokedark dark:bg-meta-4 dark:hover:bg-opacity-50 transition">
                 <span className="flex items-center gap-2">
                   <svg

@@ -1,7 +1,7 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from '../../utils/axios';
 import {toast} from "react-toastify";
-import { dispatch } from '../store';
+// import { dispatch } from '../store';
 
 
 const initialState = {
@@ -39,7 +39,7 @@ export default slice.reducer;
 const {setLoading,setError,loginSuccess,logOutSuccess} = slice.actions;
 
 // Registering new User
-export function RegisterUser(formData){
+export function RegisterUser(formData,navigate){
     return async (dispatch,getState)=>{
         // Check if prev state is disturbed
         dispatch(setError(null));
@@ -56,10 +56,14 @@ export function RegisterUser(formData){
             toast.success(response.data.message);
         }).catch(function (error){
             console.log("Inside auth Slice ",error);
-            toast.error(error?.message || "Something Went Wrong");
+            toast.error(error?.message || "Something went wrong"
+);
             dispatch(setError(error));
         }).finally(()=>{
             dispatch(setLoading(false));
+            if(!getState().auth.error){
+                navigate(`/auth/verify?email=${formData.email}`)
+            }
         });
     }
 }
@@ -71,7 +75,7 @@ export function ResendOTP(email){
         dispatch(setLoading(true));
 
         // API CALL
-        await axios.post("/auth/resend-otp",{email,},{
+        await axios.post("/auth/resend-otp",{email},{
             headers:{
                 "Content-Type": "application/json",
             },
@@ -81,13 +85,14 @@ export function ResendOTP(email){
         }).catch((error)=>{
             console.log("Inside auth slice",error);
             dispatch(setError(error));
-            toast.error(error?.message || "Something Went Wrong");
+            toast.error("Something Went Wrong");
         }).finally(()=>{
             dispatch(setLoading(false));
         })
     }
 };
 
+// Verify OTP
 export function VerifyOTP(formValues,navigate){ // cuz if it is verified then we want user to be navigated to the dashboard
     return async(dispatch,getState) => {
         dispatch(setError(null));
@@ -148,5 +153,19 @@ export function LoginUser(formValues,navigate){ // cuz if it is verified then we
                 navigate("/dashboard");
             }
         })
+    }
+}
+
+// Sign Out
+export function LogoutUser(navigate){
+    console.log("HI I entered the logout function");
+    return async(dispatch,getState) => {
+        try{
+            dispatch(logOutSuccess());
+            navigate("/");
+            toast.success("Logout Success");
+        }catch(error){
+            console.log("Error in LogoutUser: ", error);
+        }
     }
 }

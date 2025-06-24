@@ -117,7 +117,7 @@ exports.resendOTP = catchAsync(async (req,res,next)=>{
     const user = await User.findOne({email,});
 
     if(!user){
-        return res.status(400).json({
+        return res.status(405).json({
         status: "error",
         message: "Email is invalid",
         })
