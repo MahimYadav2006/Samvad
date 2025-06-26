@@ -1,7 +1,7 @@
 import React from 'react'
 import User01 from '../../images/user/user-01.png'
 import { CameraIcon } from '@phosphor-icons/react'
-import SelectInput from '../../components/Form/SelectInput'
+import SelectInput from '../../components/Form/SelectInput';
 
 
 export default function ProfileForm() {

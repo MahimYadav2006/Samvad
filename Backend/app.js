@@ -15,7 +15,7 @@ const app = express();
 // Enable CORS
 app.use(cors({
     origin: "*", // Allow all origins
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
     credentials: true
 }));
 

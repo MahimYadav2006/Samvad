@@ -4,6 +4,7 @@ import storage from 'redux-persist/lib/storage';
 // Importing the slices
 import appReducer from "./slices/app";
 import authReducer from "./slices/auth";
+import userReducer from "./slices/user";
 
 const rootPersistConfig = {
     key: "root",
@@ -14,6 +15,7 @@ const rootPersistConfig = {
 const rootReducer = combineReducers({
     app: appReducer,
     auth: authReducer,
+    user: userReducer,
 });
 
 export{rootPersistConfig, rootReducer};

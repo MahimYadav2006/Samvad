@@ -2,7 +2,8 @@
 const catchAsync = require('../utilities/catchAsync');
 const optGenerator = require('otp-generator');
 const jwt = require("jsonwebtoken");
-const promisify = require("util");
+const { promisify } = require('util');
+
 
 
 // Importing Models
@@ -188,6 +189,7 @@ exports.login = catchAsync(async (req,res,next)=>{
 exports.protect = catchAsync(async (req,res,next)=>{
     try{
         // Try to get token
+        console.log("I am doing RandiRona");
         let token;
         if(req.headers.authorization && req.headers.authorization.startsWith('bearer')){
             token = req.headers.authorization.split(" ")[1];

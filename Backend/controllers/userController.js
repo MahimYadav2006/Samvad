@@ -6,7 +6,6 @@ const Conversation = require("../models/Conversation");
 exports.getMe = catchAsync(async (req,res,next)=>{
     const {user} = req;
 
-
     res.status(200).json({
         status: "success",
         message: "User Info Found Successfully",
@@ -50,10 +49,13 @@ exports.updateAvatar = catchAsync(async (req,res,next)=>{
 
 // UPDATE PASSWORD
 exports.updatePassword = catchAsync(async (req,res,next)=>{
+    console.log("HI I am inside update Password function");
     const {currentPassword,newPassword} = req.body;
     const {_id} = req.user;
 
-    const user = User.findById(_id).select("+password");
+    console.log("From update password function: the req body is ", req);
+
+    const user = await User.findById(_id).select("+password");
     if(!user || !(await user.correctPassword(currentPassword, user.password))){
         return res.status(400).json({
             status: "Error",

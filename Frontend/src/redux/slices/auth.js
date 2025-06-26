@@ -30,13 +30,15 @@ const slice = createSlice({
             state.token = null;
             state.isLoggedIn = false;
         },
-
+        addUserId(state,action){
+            state.user =  action.payload;
+        },
     }
 });
 
 export default slice.reducer;
 
-const {setLoading,setError,loginSuccess,logOutSuccess} = slice.actions;
+const {setLoading,setError,loginSuccess,logOutSuccess,addUserId} = slice.actions;
 
 // Registering new User
 export function RegisterUser(formData,navigate){
@@ -106,10 +108,10 @@ export function VerifyOTP(formValues,navigate){ // cuz if it is verified then we
         }).then((response)=>{
             console.log("Inside auth slice" , response.data);
 
-            const {token,message} = response.data;
+            const {token,message,user_id} = response.data;
 
             dispatch(loginSuccess(token));
-
+            dispatch(addUserId({ _id: user_id }));
             toast.success(message || "Email Verified Successfully");
         }).catch((error)=>{
             console.log("Inside auth slice",error);
@@ -138,10 +140,10 @@ export function LoginUser(formValues,navigate){ // cuz if it is verified then we
         }).then((response)=>{
             console.log("Inside auth slice" , response.data);
 
-            const {token,message} = response.data;
+            const {token,message,user_id} = response.data;
 
             dispatch(loginSuccess(token));
-
+            dispatch(addUserId({ _id: user_id }));
             toast.success(message || "Logged In Successfully");
         }).catch((error)=>{
             console.log("Inside auth slice",error);

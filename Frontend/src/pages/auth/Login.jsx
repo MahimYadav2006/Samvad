@@ -129,7 +129,7 @@ let Login = () => {
                   type="submit"
                   // onClick={() => navigate("/dashboard")}
                   disabled={isSubmitting || isLoading}
-                  value="Sign In"
+                  // value="Sign In"
                   className="w-full cursor-pointer border border-primary bg-primary p-4 rounded-lg text-white transition hover:bg-opacity-90"
                 >
                   {isSubmitting || isLoading ? 'Submitting your data' : "Sign In" }
