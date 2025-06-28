@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { CaretDownIcon, GlobeIcon } from '@phosphor-icons/react'
 
-export default function SelectInput() {
+export default function SelectInput({register,errors}) {
     const [selectedOption,setSelectedOption] = useState('');
     const [isOptionSelected,setIsOptionSelected] = useState(false);
 
@@ -17,10 +17,16 @@ export default function SelectInput() {
             <GlobeIcon size={20}></GlobeIcon>
         </span>
 
-        <select value={selectedOption} onChange={(e)=>{
-            setSelectedOption(e.target.value);
-            changeTextColor();
-        }} className={ `relative z-20 w-full appearance-none rounded border border-stroke bg-transparent px-12 py-3 outline-none transition focus:border-primary active:border-primary dark:border-form-strokedark dark:bg-form-input ${isOptionSelected ? "text-black dark:text-white" : ""} `}>
+        <select
+            // value={selectedOption}
+            // onChange={(e) => {
+            //     setSelectedOption(e.target.value);
+            //     changeTextColor();
+            // }}
+            defaultValue={""}
+            {...register("country")}
+            className={ `relative z-20 w-full appearance-none rounded border bg-transparent px-12 py-3 outline-none transition dark:bg-form-input ${isOptionSelected ? "text-black dark:text-white" : ""}  ${errors.country ? "border-red-500 focus:border-red": "border-stroke dark:border-form-strokedark focus:border-primary dark:focus:border-primary"}`}
+        >
             <option disabled className='text-body dark:text-bodydark' value="">Select Country</option>
             <option className='text-body dark:text-bodydark' value="India">India</option>
             <option className='text-body dark:text-bodydark' value="USA">USA</option>

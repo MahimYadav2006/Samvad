@@ -33,8 +33,10 @@ exports.updateMe = catchAsync(async (req,res,next)=>{
 
 // UPDATE AVATAR
 exports.updateAvatar = catchAsync(async (req,res,next)=>{
-    const {avatar} = req.body;
+    const avatar = req.file.path;
     const {_id} = req.user;
+
+    console.log("Inside Update Avatar Backend function- ", avatar);
 
     const updateUser = await User.findByIdAndUpdate(_id,{avatar},{new:true, validateModifiedOnly: true});
     res.status(200).json({
@@ -49,11 +51,11 @@ exports.updateAvatar = catchAsync(async (req,res,next)=>{
 
 // UPDATE PASSWORD
 exports.updatePassword = catchAsync(async (req,res,next)=>{
-    console.log("HI I am inside update Password function");
+    // console.log("HI I am inside update Password function");
     const {currentPassword,newPassword} = req.body;
     const {_id} = req.user;
 
-    console.log("From update password function: the req body is ", req);
+    // console.log("From update password function: the req body is ", req);
 
     const user = await User.findById(_id).select("+password");
     if(!user || !(await user.correctPassword(currentPassword, user.password))){

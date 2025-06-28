@@ -9,6 +9,10 @@
 **/.env.*.local
 **/.env.local
 
+Frontend/config.env
+Backend/config.env
+*.env
+
 #  Ignore build and dist directories
 Frontend/build/
 Frontend/.next/
