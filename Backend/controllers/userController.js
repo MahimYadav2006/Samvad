@@ -36,7 +36,7 @@ exports.updateAvatar = catchAsync(async (req,res,next)=>{
     const avatar = req.file.path;
     const {_id} = req.user;
 
-    console.log("Inside Update Avatar Backend function- ", avatar);
+    // console.log("Inside Update Avatar Backend function- ", avatar);
 
     const updateUser = await User.findByIdAndUpdate(_id,{avatar},{new:true, validateModifiedOnly: true});
     res.status(200).json({
@@ -78,7 +78,7 @@ exports.updatePassword = catchAsync(async (req,res,next)=>{
 // GET USERS
 exports.getUsers = catchAsync(async (req,res,next)=>{
     const {_id} = req.user;
-    const other_verified_users = User.find({_id : {$ne: _id}, verified: true}).select("name avatar _id status");
+    const other_verified_users = await User.find({_id : {$ne: _id}, verified: true}).select("name avatar _id status");
 
     res.status(200).json({
         status: "success",
