@@ -43,8 +43,8 @@ export function fetchUserList(){
         },
       }).then(function (response){
             dispatch(updateUserList(response.data.data.users));
-            console.log("Inside Chat Slice ",response.data.data.users);
-            toast.success(response.data.message);
+            // console.log("Inside Chat Slice ",response.data.data.users);
+            // toast.success(response.data.message);
         }).catch(function (error){
             console.log("Inside Chat Slice ",error);
             toast.error(error?.message || "Something went wrong"

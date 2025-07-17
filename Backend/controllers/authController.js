@@ -184,7 +184,6 @@ exports.login = catchAsync(async (req,res,next)=>{
     })
 });
 
-
 // Protect
 exports.protect = catchAsync(async (req,res,next)=>{
     try{
@@ -208,7 +207,7 @@ exports.protect = catchAsync(async (req,res,next)=>{
         // Step 2-> Verify the token
         const decoded = await promisify(jwt.verify)(token,process.env.TOKEN_KEY);
 
-        console.log("Message from protect of authcontroller: Value of decoded is ",decoded);
+        // console.log("Message from protect of authcontroller: Value of decoded is ",decoded);
 
         // Step 3-> Check if User Still Exist
         const this_user = await User.findById(decoded.userId);

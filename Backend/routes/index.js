@@ -10,5 +10,4 @@ router.use("/user",userRoutes);
 
 
 
-
 module.exports = router;

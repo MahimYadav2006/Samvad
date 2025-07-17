@@ -2,6 +2,7 @@ import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from '../../utils/axios';
 import {toast} from "react-toastify";
 // import { dispatch } from '../store';
+import { connectSocket, disconnectSocket } from "../../utils/socket";
 
 
 const initialState = {
@@ -112,6 +113,7 @@ export function VerifyOTP(formValues,navigate){ // cuz if it is verified then we
 
             dispatch(loginSuccess(token));
             dispatch(addUserId({ _id: user_id }));
+            connectSocket(token);
             toast.success(message || "Email Verified Successfully");
         }).catch((error)=>{
             console.log("Inside auth slice",error);
@@ -144,6 +146,7 @@ export function LoginUser(formValues,navigate){ // cuz if it is verified then we
 
             dispatch(loginSuccess(token));
             dispatch(addUserId({ _id: user_id }));
+            connectSocket(token);
             toast.success(message || "Logged In Successfully");
         }).catch((error)=>{
             console.log("Inside auth slice",error);
@@ -164,6 +167,7 @@ export function LogoutUser(navigate){
     return async(dispatch,getState) => {
         try{
             dispatch(logOutSuccess());
+            disconnectSocket();
             navigate("/");
             toast.success("Logout Success");
         }catch(error){

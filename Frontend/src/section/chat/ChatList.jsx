@@ -3,7 +3,6 @@ import react, { useState, useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { fetchUserList } from "../../redux/slices/chat";
 
-
 import dummyAvatar from "../../images/user/user-01.png";
 
 function ChatList() {
@@ -20,7 +19,7 @@ function ChatList() {
           Chat List
         </h3>
         <span className="rounded-md border-[.5px] border-stroke dark:border-strokedark bg-gray px-2 py-0.5 text-base font-medium text-black dark:bg-boxdark-2 dark:text-white 2xl:ml-4">
-          8
+          {userList.length}
         </span>
       </div>
 

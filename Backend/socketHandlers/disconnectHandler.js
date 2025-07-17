@@ -17,7 +17,7 @@ const disconnectHandler = async (socket,io)=>{
         
     }
     else{
-        console.log(`User with Id ${socker.id} not found in newConnectionHandler.js`)
+        console.log(`User with Id ${socket.id} not found in newConnectionHandler.js`)
     }
 }
 
