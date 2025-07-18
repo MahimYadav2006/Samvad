@@ -1,17 +1,18 @@
 import { MagnifyingGlassIcon } from "@phosphor-icons/react";
 import react, { useState, useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
-import { fetchUserList } from "../../redux/slices/chat";
 
 import dummyAvatar from "../../images/user/user-01.png";
+import { startConversation } from "../../redux/slices/user";
 
-function ChatList() {
+
+
+function ChatList({otherPerson, setOtherPerson,userList}) {
   let [selected, setSelected] = useState(0);
+
   const dispatch = useDispatch();
-  useEffect(() => {
-    dispatch(fetchUserList());
-  }, [dispatch]);
-  const { userList, isLoading } = useSelector((state) => state.chat);
+
+
   return (
     <div className="hidden md:flex h-full flex-col md:w-1/4">
       <div className="sticky border-b border-stroke px-6 dark:border-strokedark py-7.5 flex flex-row gap-x-4">
@@ -47,6 +48,8 @@ function ChatList() {
                 key={item}
                 onClick={() => {
                   setSelected(item);
+                  setOtherPerson(object._id);
+                  dispatch(startConversation({ userId: object._id }));
                 }}
               >
                 <div className="relative mr-3.5 h-11 w-full max-w-11 rounded-full">

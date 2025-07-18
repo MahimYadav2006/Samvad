@@ -1,5 +1,8 @@
 import { XIcon , ClockIcon, VideoCameraIcon, ChatIcon, DotsThreeVerticalIcon} from "@phosphor-icons/react";
+import User01 from "../../images/user/user-01.png";
+import { useSelector } from "react-redux";
 export default function UserInfo({handleToggleUserInfo}) {
+    const oppositeUser = useSelector((state) => state.user.oppositeUser);
   return (
     <div className="border-l flex flex-col h-full border-stroke dark:border-strokedark" >
         {/* Header */}
@@ -14,20 +17,20 @@ export default function UserInfo({handleToggleUserInfo}) {
 
         {/* User Info */}
         <div className="mx-auto my-8">
-            <img src="https://images.pexels.com/photos/2379005/pexels-photo-2379005.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2" alt=""  className="w-44 h-44 rounded-lg object-cover object-center" />
+            <img src={oppositeUser.avatar || User01} alt=""  className="w-44 h-44 rounded-lg object-cover object-center" />
         </div>
 
         <div className="px-6 space-y-1">
             <div className="text-black dark:text-white font-medium text-xl">
-                John Doe
+                {oppositeUser.name || "User Name"}
             </div>
-            <span className="text-body text-md">SDE @ Apple</span>
+            <span className="text-body text-md">{oppositeUser.bio || "Available"}</span>
         </div>
 
         <div className="px-6 my-3">
             <div className="flex flex-row items-center space-x-2">
                 <ClockIcon size={20}></ClockIcon>
-                <div>6:50 AM local time</div>
+                <div>{new Date().toLocaleTimeString()}</div>
             </div>
         </div>
 

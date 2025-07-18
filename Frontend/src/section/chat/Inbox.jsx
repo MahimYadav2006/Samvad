@@ -11,10 +11,10 @@ import {
 } from "@phosphor-icons/react";
 import Dropdown from "../../components/Dropdown";
 import EmojiPicker from "../../components/EmojiPicker";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import UserInfo from "./UserInfo";
 import Giphy from "../../components/Giphy";
-import { useDispatch } from "react-redux";
+import { useDispatch ,useSelector} from "react-redux";
 import { toggleAudioModal } from "../../redux/slices/app";
 import Attachment from "../../components/Attachment";
 import MsgSeparator from "../../components/MsgSeparator";
@@ -22,13 +22,26 @@ import TypingIndicator from "../../components/TypingIndicator";
 import {TextMessage, DocumentMessage, VoiceMessage, MediaMessage} from "../../components/Messages/index";
 import VideoRoom from "../../components/VideoRoom";
 import AudioRoom from "../../components/AudioRoom";
+import { startConversation } from "../../redux/slices/user";
 
-function Inbox() {
+
+
+function Inbox({otherPerson}) {
   const dispatch = useDispatch();
   const [userInfoOpen, setUserInfoOpen] = useState(false);
   const [gifOpen,setGifOpen] = useState(false);
   const [videoCall, setVideoCall] = useState(false);
   const [audioCall, setAudioCall] = useState(false);
+  useEffect(() => {
+    if(otherPerson !== null) {
+      dispatch(startConversation(otherPerson));
+    }
+  }, [dispatch]);
+  
+  const currMessages = useSelector((state) => state.user.currMessages);
+  const oppositeUser = useSelector((state) => state.user.oppositeUser);
+  // console.log("Current Messages: ", currMessages);
+  // console.log("Inside Inbox.jsx, Opposite User: ", oppositeUser);
   const handleToggleGif = (e) =>{
     e.preventDefault();
     setGifOpen((prev) => !prev);
@@ -61,14 +74,14 @@ function Inbox() {
           <div className="flex items-center" onClick={handleToggleUserInfo}>
             <div className="mr-4.5 h-13 w-full max-w-13 overflow-hidden rounded-full">
               <img
-                src={User01}
+                src={oppositeUser.avatar || User01}
                 alt="avatar"
                 className="w-full h-full object-cover object-center"
               />
             </div>
             <div>
               <h5 className="font-medium text-black dark:text-white">
-                Henry Dholi
+                {oppositeUser.name || "User Name"}
               </h5>
               <p>Reply to message</p>
             </div>
@@ -85,8 +98,15 @@ function Inbox() {
         </div>
 
         {/* Messages */}
+
+
         <div className="max-h-full space-y-3.5 overflow-auto no-scrollbar px-6 py-7.5 grow">
-          <div className="max-w-125 w-fit">
+
+        {currMessages && currMessages.length === 0 && (
+          <div className="flex items-center justify-center m-auto text-white ">Send Message and Start Conversation</div>
+        )}
+
+          {/* <div className="max-w-125 w-fit">
             <p className="mb-2.5 text-sm font-medium">Andri Thomas</p>
             <div className="rounded-2xl mb-2.5 rounded-tl-none bg-gray px-5 py-3 dark:bg-boxdark-2">
               <p>I want to meet you tomorrow from 3pm - 5pm.</p>
@@ -159,7 +179,7 @@ function Inbox() {
             <p className="text-xs">9:00 pm</p>
           </div>
 
-          <TypingIndicator></TypingIndicator>
+          <TypingIndicator></TypingIndicator> */}
         </div>
 
         {/* Input Section */}

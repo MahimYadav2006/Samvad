@@ -6,6 +6,9 @@ const initialState = {
     isLoading: false,
     error: null,
     user: {},
+    currConversation: null, // to store current conversation ID
+    currMessages: [],
+    oppositeUser: {},
 };
 
 const slice = createSlice({
@@ -21,12 +24,21 @@ const slice = createSlice({
         setUser(state,action){
             state.user = action.payload;
         },
+        setCurrentConversation(state, action) {
+            state.currConversation = action.payload;
+        },
+        setCurrMessages(state,action){
+            state.currMessages = action.payload;                
+        },
+        setOppositeUser(state, action) {
+            state.oppositeUser = action.payload;
+        },
     }
 });
 
 export default slice.reducer;
 
-const {setLoading,setError,setUser} = slice.actions;
+const {setLoading,setError,setUser,setCurrentConversation,setCurrMessages,setOppositeUser} = slice.actions;
 
 
 export function updateUserDetails(formData) {
@@ -112,5 +124,65 @@ export function updatePassword(formData){
             dispatch(setLoading(false));
         });
     }
+}
+
+
+export function findOppositeUser(oppId) {
+    return async (dispatch, getState) => {
+        dispatch(setError(null));
+        dispatch(setLoading(true));
+        if(oppId === null || oppId === undefined) return;
+        try {
+            const res = await axios.get(`/user/someone?userId=${oppId}`, {
+                headers: {
+                    authorization: `bearer ${getState().auth.token}`,
+                },
+            });
+            const { message, data } = res.data;
+            // console.log("Inside findOppositeUser Function".data.user);
+            dispatch(setOppositeUser(res.data.data.user));
+            // toast.success(message || 'User found successfully');
+        } catch (err) {
+            console.error('findOppositeUser error', err);
+            dispatch(setError(err));
+            console.log("Inside findOppositeUser error", err);
+            toast.error(err?.message || 'Something went wrong');
+        } finally {
+            dispatch(setLoading(false));
+        }
+    };
+}
+
+
+export function startConversation(data) {
+    // console.log("Entered start Conversation");
+    return async (dispatch, getState) => {
+        dispatch(setError(null));
+        dispatch(setLoading(true));
+
+        try {
+            const res = await axios.post('/user/start-conversation', { userId: data.userId }, {
+                headers: {
+                    authorization: `bearer ${getState().auth.token}`,
+                },
+            });
+            const { data: responseData } = res.data;
+
+            dispatch(setCurrentConversation(responseData.conversation._id));
+            dispatch(setCurrMessages(responseData.conversation.messages || []));
+            // console.log("Inside startConversation", responseData);
+            // console.log("Opp Person's Id is (inside startConversation.js): ",data.userId);
+            // also fetch the opposite user
+            await dispatch(findOppositeUser(data.userId));
+
+        } catch (err) {
+            console.error('startConversation error', err);
+            console.log("Inside startConversation error", err);
+            dispatch(setError(err));
+            toast.error(err?.message || 'Something went wrong');
+        } finally {
+            dispatch(setLoading(false));
+        }
+    };
 }
 
