@@ -1,6 +1,6 @@
 const User = require("../Models/User");
 const catchAsync = require("../utilities/catchAsync");
-const Conversation = require("../models/Conversation");
+const Conversation = require("../Models/Conversation");
 
 // GET ME
 exports.getMe = catchAsync(async (req,res,next)=>{
@@ -14,6 +14,24 @@ exports.getMe = catchAsync(async (req,res,next)=>{
         }
     })
 })
+
+exports.getSomeOne = catchAsync(async (req,res,next)=>{
+    const {userId} = req.query; // User Id from the query
+    const user = await User.findById(userId).select("name jobTitle bio country avatar _id status");
+    if(!user){
+        return res.status(404).json({
+            status: "Error",
+            message: "User Not Found",
+        });
+    }
+    res.status(200).json({
+        status: "success",
+        message: "User Found Successfully",
+        data:{
+            user,
+        }
+    });
+});
 
 // UPDATE ME
 exports.updateMe = catchAsync(async (req,res,next)=>{

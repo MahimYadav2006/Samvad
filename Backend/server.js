@@ -4,7 +4,7 @@ const socketServer = require('./socketServer');
 dotenv.config({path: "./config.env"});
 
 const mongoose = require('mongoose');
-const PORT = process.env.port || process.env.API_PORT;
+const PORT = process.env.PORT || process.env.API_PORT;
 const http = require('http');
 const server = http.createServer(app);  
 socketServer.registerSocketServer(server);

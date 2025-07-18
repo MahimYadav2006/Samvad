@@ -1,4 +1,4 @@
-const Conversation = require('../models/Conversation');
+const Conversation = require('../Models/Conversation');
 
 const chatHistoryHandler = async (socket,data)=>{
     try{

@@ -1,4 +1,4 @@
-const authSocket = require('./middleware/authsocket');
+const authSocket = require('./middleware/authSocket');
 const newConnectionHandler = require('./socketHandlers/newConnectionHandler');
 const disconnectHandler = require('./socketHandlers/disconnectHandler');
 const startTypingHandler = require('./socketHandlers/startTypingHandler');

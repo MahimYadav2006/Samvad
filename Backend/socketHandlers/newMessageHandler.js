@@ -1,5 +1,5 @@
-const Conversation = require('../models/Conversation');
-const Message = require('../models/Message');
+const Conversation = require('../Models/Conversation');
+const Message = require('../Models/Message');
 
 const newMessageHandler = async (socket,data,io)=>{
     console.log(`Inside newMessageHandler.js: Data is ${JSON.stringify(data)}`);

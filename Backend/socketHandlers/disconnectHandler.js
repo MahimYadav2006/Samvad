@@ -2,7 +2,7 @@ const User = require("../Models/User")
 
 const disconnectHandler = async (socket,io)=>{
     // Log the connection
-    console.log(`User with socker ${socket.id} got disconnected in disconnectHandler.js`);
+    console.log(`User with socket ${socket.id} got disconnected in disconnectHandler.js`);
 
     // Update the user set the socker Id to undefined and status to offline
     const user = await User.findOneAndUpdate({socketId: socket.id},{socketId: undefined,status:"Offline"},{new:true, validateModifiedOnly: true});
