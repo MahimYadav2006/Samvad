@@ -1,8 +1,8 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from '../../utils/axios';
 import {toast} from "react-toastify";
-// import { dispatch } from '../store';
-
+import { getSocket } from '../../utils/socket';
+import { fetchMessages } from './user';
 
 const initialState = {
     userList: [],
@@ -23,11 +23,12 @@ const slice = createSlice({
         setLoading(state,action){
             state.isLoading = action.payload;
         },
+        reset: () => initialState,
     }
 });
 
 export default slice.reducer;
-
+export const { reset } = slice.actions;
 const {setLoading,setError,updateUserList} = slice.actions;
 
 // Fetching User List
@@ -55,4 +56,42 @@ export function fetchUserList(){
         });
     }
 }
+
+// Direct Message
+export function newDirectMessage(data) {
+    return async (dispatch, getState) => {
+        dispatch(setError(null));
+        dispatch(setLoading(true));
+
+        const socket = getSocket();
+        if (!socket) {
+            console.error("Socket is not connected.");
+            toast.error("Socket connection lost.");
+            dispatch(setLoading(false));
+            return;
+        }
+
+        const newData = {
+            message: data,
+            conversationId: getState().user.currConversation,
+        };
+        console.log("New Direct Message Data: ", newData);
+
+        socket.emit('new-message', newData, (response) => {
+            if (response?.error) {
+                console.error("Error sending message:", response.error);
+                toast.error(response.error || "Failed to send message");
+            } else {
+                console.log("New direct message sent", newData);
+                console.log("Fetching Messages from Server");
+                // dispatch(fetchMessages(getState().user.currConversation));
+                toast.success("Message sent successfully");
+            }
+            dispatch(setLoading(false));
+        });
+    };
+}
+
+
+
 

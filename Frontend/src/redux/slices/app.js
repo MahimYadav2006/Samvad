@@ -27,11 +27,12 @@ const slice = createSlice({
         updateDocumentModal(state,action){
             state.modals.document = action.payload;
         },
+        reset: () => initialState,
     },
 });
 
 export default slice.reducer;
-
+export const { reset } = slice.actions;
 export const toggleGifModal = (payload) => (dispatch) => {
   dispatch(slice.actions.updateGifModal(payload));
 }

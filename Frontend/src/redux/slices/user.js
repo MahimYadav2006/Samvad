@@ -1,6 +1,7 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from '../../utils/axios';
 import {toast} from "react-toastify";
+import { getSocket } from '../../utils/socket';
 
 const initialState = {
     isLoading: false,
@@ -33,13 +34,45 @@ const slice = createSlice({
         setOppositeUser(state, action) {
             state.oppositeUser = action.payload;
         },
+        addCurrMessage(state, action) {
+            state.currMessages.push(action.payload);
+        },
+        reset: () => initialState,        
     }
 });
 
 export default slice.reducer;
-
+const { addCurrMessage } = slice.actions;
+export { addCurrMessage };
+export const { reset } = slice.actions;
 const {setLoading,setError,setUser,setCurrentConversation,setCurrMessages,setOppositeUser} = slice.actions;
 
+
+export function findUser(currId) {
+    return async (dispatch, getState) => {
+        dispatch(setError(null));
+        dispatch(setLoading(true));
+        if(currId === null || currId === undefined) return;
+        try {
+            const res = await axios.get(`/user/someone?userId=${currId}`, {
+                headers: {
+                    authorization: `bearer ${getState().auth.token}`,
+                },
+            });
+            const { message, data } = res.data;
+            // console.log("Inside findOppositeUser Function".data.user);
+            dispatch(setUser(res.data.data.user));
+            // toast.success(message || 'User found successfully');
+        } catch (err) {
+            console.error('Inside FindUser  error', err);
+            dispatch(setError(err));
+            console.log("Inside findUser error", err);
+            toast.error(err?.message || 'Something went wrong');
+        } finally {
+            dispatch(setLoading(false));
+        }
+    };
+}
 
 export function updateUserDetails(formData) {
     return async (dispatch,getState) =>{
@@ -153,6 +186,35 @@ export function findOppositeUser(oppId) {
     };
 }
 
+export function fetchMessages(convId) {
+    console.log("Entered Fetch Messages with id", convId);
+    return async (dispatch, getState) => {
+        dispatch(setError(null));
+        dispatch(setLoading(true));
+        const newData = {
+            conversationId: convId,
+        }
+        const socket = getSocket();
+        if (!socket) {
+            console.error("Socket is not connected.");
+            toast.error("Socket connection lost.");
+            dispatch(setLoading(false));
+            return;
+        }
+        socket.emit('direct-chat-history', newData, (response) => {
+            if (response?.error) {
+                console.error("Error fetching message history:", response.message || "Unknown error");
+                toast.error(response.message || "Failed to fetch messages");
+            } else {
+                console.log("New history retrieved", response);
+                toast.success("Messages retrieved successfully");
+                dispatch(setCurrMessages(response.data.history || []));
+            }
+            dispatch(setLoading(false));
+        });        
+    };
+}
+
 
 export function startConversation(data) {
     // console.log("Entered start Conversation");
@@ -167,14 +229,13 @@ export function startConversation(data) {
                 },
             });
             const { data: responseData } = res.data;
-
-            dispatch(setCurrentConversation(responseData.conversation._id));
-            dispatch(setCurrMessages(responseData.conversation.messages || []));
             // console.log("Inside startConversation", responseData);
-            // console.log("Opp Person's Id is (inside startConversation.js): ",data.userId);
-            // also fetch the opposite user
+            await dispatch(setCurrMessages([])); // Clear current messages
+            await dispatch(setCurrentConversation(responseData.conversation._id));
+            await dispatch(setCurrMessages(responseData.conversation.messages || []));
             await dispatch(findOppositeUser(data.userId));
-
+            // await dispatch(fetchMessages(responseData.conversation._id));
+            // dispatch(setCurrMessages(responseData.conversation.messages || []));
         } catch (err) {
             console.error('startConversation error', err);
             console.log("Inside startConversation error", err);
@@ -185,4 +246,7 @@ export function startConversation(data) {
         }
     };
 }
+
+
+
 

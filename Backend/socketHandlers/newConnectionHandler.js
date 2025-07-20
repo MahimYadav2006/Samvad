@@ -8,7 +8,7 @@ let newConnectionHandler = async (socket,io)=>{
     // Log new user connected
     console.log("New User Connected: (In newConnectionHandler.js): ",socket.id);
 
-    const user = await User.findByIdAndUpdate(userId,{sockerId: socket.id, status: "Online"},{new: true, validateModifiedOnly: true});
+    const user = await User.findByIdAndUpdate(userId,{socketId: socket.id, status: "Online"},{new: true, validateModifiedOnly: true});
 
     if(user){
         // broadcast to everyone that new user got connected

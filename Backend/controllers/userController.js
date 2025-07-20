@@ -17,7 +17,7 @@ exports.getMe = catchAsync(async (req,res,next)=>{
 
 exports.getSomeOne = catchAsync(async (req,res,next)=>{
     const {userId} = req.query; // User Id from the query
-    const user = await User.findById(userId).select("name jobTitle bio country avatar _id status");
+    const user = await User.findById(userId).select("name jobTitle bio country avatar _id status socketId");
     if(!user){
         return res.status(404).json({
             status: "Error",

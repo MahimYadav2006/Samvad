@@ -22,7 +22,7 @@ function Verification() {
   const [timer,setTimer] = useState(60);
   const inputRefs = useRef([]);
   const email = new URLSearchParams(location.search).get("email");
-  const {isLoading} = useSelector((state) => state.auth);
+  const isLoading = useSelector((state) => state.auth.isLoading);
 
   const {control,handleSubmit,setValue,getValues,formState:{errors,isSubmitting}} = useForm({
     resolver: yupResolver(otpSchema),

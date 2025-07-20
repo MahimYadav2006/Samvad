@@ -23,8 +23,8 @@ import {TextMessage, DocumentMessage, VoiceMessage, MediaMessage} from "../../co
 import VideoRoom from "../../components/VideoRoom";
 import AudioRoom from "../../components/AudioRoom";
 import { startConversation } from "../../redux/slices/user";
-
-
+import { newDirectMessage } from "../../redux/slices/chat";
+import { findOppositeUser } from "../../redux/slices/user";
 
 function Inbox({otherPerson}) {
   const dispatch = useDispatch();
@@ -32,16 +32,22 @@ function Inbox({otherPerson}) {
   const [gifOpen,setGifOpen] = useState(false);
   const [videoCall, setVideoCall] = useState(false);
   const [audioCall, setAudioCall] = useState(false);
+  const [messageText, setMessageText] = useState("");
   useEffect(() => {
     if(otherPerson !== null) {
+      console.log("Entered the inbox and finded and started the conversation with the otherperson", otherPerson);
       dispatch(startConversation(otherPerson));
+      dispatch(findOppositeUser(otherPerson));
     }
-  }, [dispatch]);
+    else{
+      console.log("Entered the inbox but otherperson is null");
+    }
+  }, [dispatch,otherPerson]);
   
   const currMessages = useSelector((state) => state.user.currMessages);
   const oppositeUser = useSelector((state) => state.user.oppositeUser);
-  // console.log("Current Messages: ", currMessages);
-  // console.log("Inside Inbox.jsx, Opposite User: ", oppositeUser);
+  const user = useSelector((state) => state.user.user);
+
   const handleToggleGif = (e) =>{
     e.preventDefault();
     setGifOpen((prev) => !prev);
@@ -65,7 +71,13 @@ function Inbox({otherPerson}) {
     e.preventDefault();
     setAudioCall((prev)=>!prev);
   };
+  const handleSendMessage = (e) => {
+    e.preventDefault();
+    if (!messageText.trim()) return;
 
+    dispatch(newDirectMessage({ content: messageText, author: user._id, media: null ,audioUrl: null, document:null ,type:null ,giphyUrl:null }));
+    setMessageText("");
+};
   return (
     <>
       <div className={`flex h-full flex-col border-l border-stroke p-2 dark:border-strokedark  ${userInfoOpen ? "w-1/2" : "w-3/4"}`}>
@@ -81,6 +93,7 @@ function Inbox({otherPerson}) {
             </div>
             <div>
               <h5 className="font-medium text-black dark:text-white">
+                {/* {console.log("Inside Inbox.jsx oppositeUser is ",oppositeUser)} */}
                 {oppositeUser.name || "User Name"}
               </h5>
               <p>Reply to message</p>
@@ -103,8 +116,22 @@ function Inbox({otherPerson}) {
         <div className="max-h-full space-y-3.5 overflow-auto no-scrollbar px-6 py-7.5 grow">
 
         {currMessages && currMessages.length === 0 && (
-          <div className="flex items-center justify-center m-auto text-white ">Send Message and Start Conversation</div>
+          <div className="flex items-center justify-center m-auto dark:text-white text-black">Send Message and Start Conversation</div>
         )}
+        {currMessages && currMessages.map((message, index) => {
+          if (message.content !== null && message.giphyUrl === null) {
+            return (
+              <TextMessage
+                key={index}
+                author={message.author}
+                content={message.content}
+                read_receipt={message.read_receipt}
+                incoming={message.author !== user._id}
+              />
+            );
+          }
+          return null;
+        })}
 
           {/* <div className="max-w-125 w-fit">
             <p className="mb-2.5 text-sm font-medium">Andri Thomas</p>
@@ -180,18 +207,21 @@ function Inbox({otherPerson}) {
           </div>
 
           <TypingIndicator></TypingIndicator> */}
+
         </div>
 
         {/* Input Section */}
         <div className="sticky bottom-0 border-t border-stroke bg-white px-6 py-5 dark:border-strokedark dark:bg-boxdark ">
           <form
-            action=""
+            onSubmit={handleSendMessage}
             className="flex items-center justify-between space-x-4.5"
           >
             <div className="relative w-full">
               <input
                 type="text"
                 placeholder="Type your message..."
+                value={messageText}
+                onChange={(e) => setMessageText(e.target.value)}
                 className="h-13 w-full rounded-md border border-stroke bg-gray pl-5 pr-19 text-black placeholder-body outline-none focus:border-primary dark:border-strokedark dark:bg-boxdark-2 dark:text-white"
               />
 
@@ -206,7 +236,9 @@ function Inbox({otherPerson}) {
                   <GifIcon size={20}></GifIcon>
                 </button>
                 <button className="hover:text-primary">
-                  <EmojiPicker></EmojiPicker>
+                <EmojiPicker onEmojiSelect={(emoji) => {
+                  setMessageText((prev) => prev + emoji.native);
+                }} />
                 </button>
               </div>
             </div>

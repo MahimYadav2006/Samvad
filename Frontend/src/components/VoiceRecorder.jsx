@@ -6,7 +6,7 @@ import { AudioRecorder, useAudioRecorder } from "react-audio-voice-recorder";
 export default function VoiceRecorder() {
   const modalRef = useRef(null);
   const dispatch = useDispatch();
-  const { audio } = useSelector((state) => state.app.modals);
+  const  audio  = useSelector((state) => state.app.modals.audio);
 
   useEffect(() => {
     const keyHandler = (event) => {

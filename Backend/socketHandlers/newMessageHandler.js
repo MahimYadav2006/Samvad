@@ -1,50 +1,54 @@
 const Conversation = require('../Models/Conversation');
 const Message = require('../Models/Message');
 
-const newMessageHandler = async (socket,data,io)=>{
-    console.log(`Inside newMessageHandler.js: Data is ${JSON.stringify(data)}`);
+const newMessageHandler = async (socket, data, io, ack) => {
+    console.log(`[newMessageHandler] Data: ${JSON.stringify(data)}`);
 
-    const {message,conversationId} = data;
-    const {author,content,media,audioUrl,document,type,giphyUrl} = message;
+    const { message, conversationId } = data;
+    const { author, content, media, audioUrl, document, type, giphyUrl } = message;
 
-    try{
-        // Find conversation by conversation Id
-        const conversation = Conversation.findById(conversationId);
-        if(!conversation){
-            // If conversation not found, send an error
-            socket.emit("error", {
-                message: "Conversation not found"
-            });
+    try {
+        // Find conversation by conversationId
+        const conversation = await Conversation.findById(conversationId);
+        if (!conversation) {
+            console.error(` [newMessageHandler] Conversation not found: ${conversationId}`);
+            ack?.({ error: "Conversation not found" });
             return;
         }
 
-        // Create a new messgae using the message model
-        const newMessage = await Message.create({author,content,media,audioUrl,document,type,giphyUrl});
+        // Create new message
+        const newMessage = await Message.create({ author, content, media, audioUrl, document, type, giphyUrl });
 
-        // Push the message id to the messages array in the conversation object
+        // Add message to conversation
         conversation.messages.push(newMessage._id);
-        // await conversation.save({});
+        await conversation.save();
 
-        // Populate the conversation with messages and participants 
-        const updatedConversation = await conversation.findById(conversatio.id).populate("messages").populate("participants");
+        // Populate conversation
+        const updatedConversation = await Conversation.findById(conversationId)
+            .populate("messages")
+            .populate("participants");
 
-        // Find the participants who are online in the chat -> To unncessarily avoiding emiting socket event
-        const onlineParticipants = updatedConversation.participants.filter((participant)=> participant.status === "Online" && participant.socketId)
-        console.log(`Inside newMessageHandler.js: Online participants are `,onlineParticipants);
+        // Find online participants
+        const onlineParticipants = updatedConversation.participants.filter(
+            (participant) => participant.status === "Online" && participant.socketId
+        );
 
-        // Emit 'new-message' to online users
-        onlineParticipants.forEach(participant => {
-            console.log(`Inside newMessageHandler: Socket id of online participant of chat is: `,participant.socketId);
-            io.to(participant.socketId).emit('new-direct-chat',{
-                conversationId: conversationId,
+        console.log(` [newMessageHandler] Online participants:`, onlineParticipants.map(p => p.socketId));
+
+        // Notify online participants
+        onlineParticipants.forEach((participant) => {
+            io.to(participant.socketId).emit('new-direct-chat', {
+                conversationId,
                 message: newMessage,
             });
         });
+
+        //  Acknowledge the sender
+        ack?.({ success: true, messageId: newMessage._id });
+    } catch (error) {
+        console.error(` [newMessageHandler] Error:`, error);
+        ack?.({ error: "Failed to send message", details: error.message });
     }
-    catch(error){
-        console.log(`Inside newMessageHandler.js Error received `, error);
-        socket.emit("error",{ message: "Failed to send message", error });
-    }
-}
+};
 
 module.exports = newMessageHandler;

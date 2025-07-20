@@ -26,7 +26,7 @@ const schema = yup.object().shape({
 
 let Signup = () => {
   const navigate = useNavigate();
-  const { isLoading } = useSelector((state) => state.auth);
+  const isLoading = useSelector((state) => state.auth.isLoading);
   const dispatch = useDispatch();
   const {
     register,

@@ -4,7 +4,7 @@ import { useSelector, useDispatch } from "react-redux";
 
 import dummyAvatar from "../../images/user/user-01.png";
 import { startConversation } from "../../redux/slices/user";
-
+import setCurrMessages from "../../redux/slices/user";
 
 
 function ChatList({otherPerson, setOtherPerson,userList}) {

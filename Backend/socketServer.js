@@ -4,56 +4,52 @@ const disconnectHandler = require('./socketHandlers/disconnectHandler');
 const startTypingHandler = require('./socketHandlers/startTypingHandler');
 const stopTypingHandler = require('./socketHandlers/stopTypingHandler');
 const chatHistoryHandler = require('./socketHandlers/getMessageHistory');
-const newMessageHandler = require('./socketHandlers/newMessageHandler').default;
-
+const newMessageHandler = require('./socketHandlers/newMessageHandler');
 
 const registerSocketServer = (server) => {
-    const io = require('socket.io')(server,{
-        cors:{
+    const io = require('socket.io')(server, {
+        cors: {
             origin: "*",
             methods: ["GET", "POST"],
         }
     });
 
-    io.use((socket,next)=>{
-        authSocket(socket,next);
-    })
+    io.use((socket, next) => {
+        authSocket(socket, next);
+    });
 
-    io.on('connection',(socket)=>{
-        console.log("Inside sockerServer.js , A user connected");
-        console.log(socket.id);
+    io.on('connection', (socket) => {
+        console.log("✅ [socketServer.js] User connected:", socket.id);
 
         // New Connection Handler
-        newConnectionHandler(socket,io);
+        newConnectionHandler(socket, io);
 
-        //  Disconnet handler
-        socket.on("disconnect",()=>{
-            disconnectHandler(socket,io);
-        })
-
-        // newMessageHandler
-        socket.on("new-messgage",(data)=>{
-            newMessageHandler(socket,data,io);
+        // Disconnect handler
+        socket.on("disconnect", () => {
+            disconnectHandler(socket, io);
         });
 
-        //chatHistoryHandler
-        socket.on("direct-chat-history",(data)=>{
-            chatHistoryHandler(socket,data);
-        })
-
-        // Start typing handler
-        socket.on("start-typing",(data)=>{
-            startTypingHandler(socket,data,io);
+        // newMessageHandler with ack
+        socket.on("new-message", (data, ack) => {
+            newMessageHandler(socket, data, io, ack);
         });
 
-        //Stop typing handler
-        socket.on("stop-typing",(data)=>{
-            stopTypingHandler(socket,data,io);
+        // chatHistoryHandler
+        socket.on("direct-chat-history", (data, ack) => {
+            chatHistoryHandler(socket, data, ack);
         });
         
-    })
 
-    // return io;
+        // Start typing handler
+        socket.on("start-typing", (data) => {
+            startTypingHandler(socket, data, io);
+        });
+
+        // Stop typing handler
+        socket.on("stop-typing", (data) => {
+            stopTypingHandler(socket, data, io);
+        });
+    });
 }
 
-module.exports = {registerSocketServer};
+module.exports = { registerSocketServer };

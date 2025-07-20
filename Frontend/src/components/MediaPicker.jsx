@@ -8,7 +8,7 @@ import FileDropZone from "./FileDropZone";
 export default function MediaPicker() {
   const modalRef = useRef(null);
   const dispatch = useDispatch();
-  const {media} = useSelector((state)=> state.app.modals);
+  const media = useSelector((state)=> state.app.modals.media);
 
   useEffect(() => {
     const keyHandler = (event) => {

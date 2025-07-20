@@ -4,8 +4,8 @@ import { useDispatch, useSelector } from "react-redux";
 import { toggleGifModal } from "../redux/slices/app";
 
 export default function GifModal() {
-  const { gif } = useSelector((state) => state.app.modals);
-  const { selectedGifUrl } = useSelector((state) => state.app);
+  const  gif  = useSelector((state) => state.app.modals.gif);
+  const selectedGifUrl = useSelector((state) => state.app.selectedGifUrl);
   const dispatch = useDispatch();
   const modalRef = useRef(null);
 

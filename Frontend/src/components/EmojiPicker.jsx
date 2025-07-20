@@ -3,7 +3,7 @@ import data from '@emoji-mart/data';
 import Picker from '@emoji-mart/react';
 import { SmileyIcon } from '@phosphor-icons/react';
 
-function EmojiPicker() {
+function EmojiPicker({onEmojiSelect}) {
     const [pickerOpen, setPickerOpen] = useState(false);
 
     const pickerRef = useRef(null);
@@ -41,7 +41,7 @@ function EmojiPicker() {
 
             {pickerOpen && (
                 <div ref={pickerRef}  className='absolute z-40 bottom-10 right-0'>
-                    <Picker theme={colorMode} data={data} onEmojiSelect={console.log} />
+                    <Picker theme={colorMode} data={data} onEmojiSelect={onEmojiSelect} />
                 </div>
             )}
         </div>

@@ -34,11 +34,12 @@ const slice = createSlice({
         addUserId(state,action){
             state.user =  action.payload;
         },
+        reset: () => initialState,
     }
 });
 
 export default slice.reducer;
-
+export const { reset } = slice.actions;
 const {setLoading,setError,loginSuccess,logOutSuccess,addUserId} = slice.actions;
 
 // Registering new User
@@ -113,7 +114,6 @@ export function VerifyOTP(formValues,navigate){ // cuz if it is verified then we
 
             dispatch(loginSuccess(token));
             dispatch(addUserId({ _id: user_id }));
-            connectSocket(token);
             toast.success(message || "Email Verified Successfully");
         }).catch((error)=>{
             console.log("Inside auth slice",error);
@@ -146,7 +146,6 @@ export function LoginUser(formValues,navigate){ // cuz if it is verified then we
 
             dispatch(loginSuccess(token));
             dispatch(addUserId({ _id: user_id }));
-            connectSocket(token);
             toast.success(message || "Logged In Successfully");
         }).catch((error)=>{
             console.log("Inside auth slice",error);
@@ -167,7 +166,6 @@ export function LogoutUser(navigate){
     return async(dispatch,getState) => {
         try{
             dispatch(logOutSuccess());
-            disconnectSocket();
             navigate("/");
             toast.success("Logout Success");
         }catch(error){
