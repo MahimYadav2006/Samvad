@@ -36,7 +36,8 @@ const messageSchema = new Schema({
     },
     giphyUrl:{
         type: String,
-        enum:['Media','Text','Document','Giphy','Audio'],
+        default: null,
+        // enum:['Media','Text','Document','Giphy','Audio'],
     },
     document: documentSchema,
 });

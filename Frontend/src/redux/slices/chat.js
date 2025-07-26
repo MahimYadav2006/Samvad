@@ -92,6 +92,104 @@ export function newDirectMessage(data) {
     };
 }
 
+// Upload Doc
+export const uploadDocument = createAsyncThunk(
+    "chat/uploadDocument",
+    async (file, { getState, rejectWithValue }) => {
+      try {
+        const formData = new FormData();
+        formData.append("document", file);
+  
+        const token = getState().auth.token;
+  
+        const res = await axios.post("/chat/upload-doc", formData, {
+          headers: {
+            "Content-Type": "multipart/form-data",
+            authorization: `bearer ${token}`,
+          },
+        });
+  
+        console.log("✅ Document uploaded:", res.data.data);
+        return res.data.data; // {url, name, size, type, public_id}
+      } catch (err) {
+        console.error("❌ Upload document failed:", err);
+        return rejectWithValue(err?.response?.data || err.message);
+      }
+    }
+  );
+
+
+// Upload the audio message
+export function uploadAudioMessage(file) {
+    return async (dispatch, getState) => {
+        dispatch(setError(null));
+        dispatch(setLoading(true));
+
+        try {
+            const formData = new FormData();
+            formData.append("audio", file);
+
+            const response = await axios.post("/chat/upload-audio", formData, {
+                headers: {
+                    "Content-Type": "multipart/form-data",
+                    authorization: `bearer ${getState().auth.token}`,
+                },
+            });
+
+            const audioUrl = response.data.data.audioUrl;
+            toast.success("Audio uploaded successfully");
+
+            // optionally return or dispatch audioUrl here
+            return audioUrl;
+
+        } catch (err) {
+            console.error(" Failed to upload audio:", err);
+            toast.error(err?.response?.data?.message || "Failed to upload audio");
+            dispatch(setError(err));
+        } finally {
+            dispatch(setLoading(false));
+        }
+    };
+}
+
+// Upload Media 
+export function uploadMedia(file) {
+    return async (dispatch, getState) => {
+      dispatch(setError(null));
+      dispatch(setLoading(true));
+  
+      try {
+        const formData = new FormData();
+        formData.append("media", file); // Single file
+  
+        const response = await axios.post("/chat/upload-media", formData, {
+          headers: {
+            "Content-Type": "multipart/form-data",
+            authorization: `bearer ${getState().auth.token}`,
+          },
+        });
+  
+        const uploadedFile = response.data.data;
+        toast.success("Media uploaded successfully");
+        return uploadedFile;
+  
+      } catch (err) {
+        console.error("Upload failed:", err);
+        toast.error(err?.response?.data?.message || "Failed to upload media");
+        dispatch(setError(err));
+        return null;
+      } finally {
+        dispatch(setLoading(false));
+      }
+    };
+  }
+  
+  
+
+
+  
+
+
 
 
 

@@ -19,12 +19,14 @@ import { toggleAudioModal } from "../../redux/slices/app";
 import Attachment from "../../components/Attachment";
 import MsgSeparator from "../../components/MsgSeparator";
 import TypingIndicator from "../../components/TypingIndicator";
-import {TextMessage, DocumentMessage, VoiceMessage, MediaMessage} from "../../components/Messages/index";
+import {TextMessage, DocumentMessage, VoiceMessage} from "../../components/Messages/index";
 import VideoRoom from "../../components/VideoRoom";
 import AudioRoom from "../../components/AudioRoom";
 import { startConversation } from "../../redux/slices/user";
 import { newDirectMessage } from "../../redux/slices/chat";
 import { findOppositeUser } from "../../redux/slices/user";
+import GiphyMessage from "../../components/Messages/GiphyMessage";
+import MediaMessage from "../../components/Messages/MediaMessage";
 
 function Inbox({otherPerson}) {
   const dispatch = useDispatch();
@@ -71,13 +73,15 @@ function Inbox({otherPerson}) {
     e.preventDefault();
     setAudioCall((prev)=>!prev);
   };
+
   const handleSendMessage = (e) => {
     e.preventDefault();
     if (!messageText.trim()) return;
 
     dispatch(newDirectMessage({ content: messageText, author: user._id, media: null ,audioUrl: null, document:null ,type:null ,giphyUrl:null }));
     setMessageText("");
-};
+  };
+
   return (
     <>
       <div className={`flex h-full flex-col border-l border-stroke p-2 dark:border-strokedark  ${userInfoOpen ? "w-1/2" : "w-3/4"}`}>
@@ -119,7 +123,7 @@ function Inbox({otherPerson}) {
           <div className="flex items-center justify-center m-auto dark:text-white text-black">Send Message and Start Conversation</div>
         )}
         {currMessages && currMessages.map((message, index) => {
-          if (message.content !== null && message.giphyUrl === null) {
+          if (message.content !== null && message.giphyUrl === null && message.media === null && message.audioUrl === null && (message.document === null || message.document === undefined)) {
             return (
               <TextMessage
                 key={index}
@@ -130,8 +134,55 @@ function Inbox({otherPerson}) {
               />
             );
           }
+          else if(message.document !== null && message.document !== undefined) {
+            // console.log("Inside Inbox.jsx, Document Message is", message);
+            return (
+              <DocumentMessage
+                key={index}
+                author={message.author}
+                text={message.content}
+                incoming={message.author !== user._id}
+                // read_receipt={message.read_receipt}
+                // timestamp={message.timestamp}
+                document={message.document}
+              />
+              // <p> XYZ Docs </p>
+            );
+          }
+          else if(message.audioUrl !== null){
+            return (
+              <VoiceMessage audioUrl={message.audioUrl} incoming={message.author !== user._id} author={message.author} key={index}/>
+            )
+          }
+          else if(message.giphyUrl !== null){
+            return (
+              <GiphyMessage
+                key={index}
+                incoming={message.author !== user._id}
+                author={message.author}
+                timestamp={message.timestamp}
+                read_receipt={message.read_receipt}
+                giphyUrl={message.giphyUrl}
+                content={message.content}
+              />
+            );
+          }
+          else if(message.media != null && message.media.length > 0) {
+            return (
+              <MediaMessage
+                key={index}
+                incoming={message.author !== user._id}
+                author={message.author}
+                timestamp={message.timestamp}
+                read_receipt={message.read_receipt}
+                media={message.media}
+                content={message.content}
+              />
+            );
+          }
           return null;
         })}
+        
 
           {/* <div className="max-w-125 w-fit">
             <p className="mb-2.5 text-sm font-medium">Andri Thomas</p>

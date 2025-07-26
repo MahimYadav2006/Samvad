@@ -1,14 +1,18 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { PaperPlaneTiltIcon, XIcon } from "@phosphor-icons/react";
 import { toggleDocumentModal, toggleMediaModal } from "../redux/slices/app";
 import FileDropZone from "./FileDropZone";
+import { newDirectMessage } from "../redux/slices/chat";
+
+
 
 export default function DocumentPicker() {
   const modalRef = useRef(null);
   const dispatch = useDispatch();
   const { document: documenti } = useSelector((state) => state.app.modals);
-
+  const [fileData,setFileData] = useState({});
+  const [messageText, setMessageText] = useState("");
 
   useEffect(() => {
     const keyHandler = (event) => {
@@ -18,7 +22,16 @@ export default function DocumentPicker() {
     document.addEventListener("keydown", keyHandler);
     return () => document.removeEventListener("keydown", keyHandler);
   }, [documenti, dispatch]);
-
+  const user = useSelector((state) => state.auth.user);
+  const handleSendMessage = (e) => {
+      e.preventDefault();
+      if (!messageText.trim()) return;
+      dispatch(newDirectMessage({ content: messageText, author: user._id, media: null ,audioUrl: null, document:fileData ,type:null ,giphyUrl:null }));
+      setMessageText("");
+      dispatch(toggleDocumentModal(false));
+      setFileData({});
+      dispatch(toggleMediaModal(false));
+  };
 
   return (
     <div
@@ -37,7 +50,7 @@ export default function DocumentPicker() {
           </div>
           <button
             onClick={() => {
-              //
+              
             }}
           >
             <XIcon onClick={()=> dispatch(toggleDocumentModal(false))}  size={24}></XIcon>
@@ -45,16 +58,18 @@ export default function DocumentPicker() {
         </div>
 
             {/* FilePicker */}
-            <FileDropZone acceptedFiles=".pdf,.ppt,.doc,.docx,.xls,.xlsx,.txt,.csv,.fig" ></FileDropZone>
+            <FileDropZone  fileData={fileData} setFileData={setFileData} acceptedFiles=".pdf,.ppt,.doc,.docx,.xls,.xlsx,.txt,.csv,.fig" ></FileDropZone>
             {/* MessageFooter */}
         <div className="flex flex-row items-center space-x-2 justify-between mt-4">
           <input
             type="text"
             className="border rounded-lg hover:border-primary outline-none w-full p-2 border-stroke dark:border-strokedark bg-transparent dark:bg-form-input"
             placeholder="Type your message.."
+            value={messageText}
+            onChange={(e) => setMessageText(e.target.value)}
           />
           <button className="p-2.5 border border-primary flex items-center justify-center rounded-lg bg-primary hover:bg-opacity-90 text-white">
-            <PaperPlaneTiltIcon size={20} weight="bold"></PaperPlaneTiltIcon>
+            <PaperPlaneTiltIcon size={20} weight="bold" onClick={handleSendMessage}></PaperPlaneTiltIcon>
           </button>
         </div>
       </div>

@@ -1,10 +1,10 @@
 import { useDispatch } from "react-redux";
-import { uploadDocument } from "../redux/slices/chat";
-import { useRef, useEffect} from "react";
+import { uploadMedia } from "../redux/slices/chat";
+import { useRef, useEffect } from "react";
 import Dropzone from "dropzone";
 import { UploadSimpleIcon } from "@phosphor-icons/react";
 
-export default function FileDropZone({ fileData, setFileData, acceptedFiles, maxFileSize = 16 * 1024 * 1024 }) {
+export default function MediaDropZone({ fileData, setFileData, acceptedFiles }) {
   const dropZoneRef = useRef(null);
   const formRef = useRef(null);
   const dispatch = useDispatch();
@@ -14,35 +14,32 @@ export default function FileDropZone({ fileData, setFileData, acceptedFiles, max
 
     if (!dropZoneRef.current && formRef.current) {
       dropZoneRef.current = new Dropzone(formRef.current, {
-        url: "/", // dummy
+        url: "/", // Not used
         autoProcessQueue: false,
         acceptedFiles,
-        maxFilesize: maxFileSize / (1024 * 1024),
+        maxFiles: 1, // Ensure only one file
+        maxFilesize: 16, // MB
         addRemoveLinks: true,
         init() {
           this.on("addedfile", async (file) => {
-            console.log("📁 File added:", file);
-
             try {
-              const resultAction = await dispatch(uploadDocument(file));
-              if (uploadDocument.fulfilled.match(resultAction)) {
-                console.log("✅ Document uploaded:", resultAction.payload);
-                const docData  = {
-                    url: resultAction.payload.url,
-                    name: resultAction.payload.name,
-                    size: resultAction.payload.size,
-                }
-                setFileData(docData);
+              const uploaded = await dispatch(uploadMedia(file));
+              if (uploaded) {
+                console.log("Uploaded:", uploaded);
+                setFileData(uploaded); // SINGLE file
                 this.emit("success", file, "Uploaded");
               } else {
-                console.error("❌ Upload failed:", resultAction.payload);
                 this.emit("error", file, "Upload failed");
               }
-              this.emit("complete", file);
             } catch (err) {
-              console.error("❌ Exception during upload:", err);
-              this.emit("error", file, "Upload failed");
+              this.emit("error", file, "Exception occurred");
             }
+            this.emit("complete", file);
+          });
+
+          this.on("maxfilesexceeded", (file) => {
+            this.removeAllFiles();
+            this.addFile(file);
           });
         },
       });
@@ -54,14 +51,13 @@ export default function FileDropZone({ fileData, setFileData, acceptedFiles, max
         dropZoneRef.current = null;
       }
     };
-  }, [acceptedFiles, maxFileSize, dispatch]);
+  }, [acceptedFiles, dispatch, setFileData]);
 
   return (
     <div className="rounded-sm border border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark">
       <div className="p-6.5">
         <form
           ref={formRef}
-          id="upload"
           className="dropzone rounded-md !border-dashed !border-bodydark1 bg-gray hover:!border-primary dark:!border-strokedark dark:bg-graydark dark:hover:!border-primary"
         >
           <div className="dz-message">
@@ -70,7 +66,7 @@ export default function FileDropZone({ fileData, setFileData, acceptedFiles, max
                 <UploadSimpleIcon size={24} />
               </div>
               <span className="font-medium text-black dark:text-white">
-                Drop files here to upload
+                Drop a media file here to upload
               </span>
             </div>
           </div>

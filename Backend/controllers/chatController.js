@@ -13,3 +13,62 @@ exports.getMessages = catchAsync(async (req,res,next)=>{
         }
     })
 });
+
+exports.uploadDoc = catchAsync(async (req, res, next) => {
+    if (!req.file) {
+        return res.status(400).json({ error: "No file uploaded" });
+    }
+
+    const { path: url, originalname: name, mimetype, filename: public_id } = req.file;
+    const size = req.file.size || req.file.bytes || null;
+
+    res.status(200).json({
+        status: "success",
+        message: "Document uploaded successfully",
+        data: {
+            url,
+            name,
+            size,
+            type: mimetype,
+            public_id
+        }
+    });
+});
+
+exports.uploadAudio = catchAsync(async (req, res, next) => {
+    if (!req.file) {
+        return res.status(400).json({ error: "No audio file uploaded" });
+    }
+
+    const { path: audioUrl } = req.file;
+
+    res.status(200).json({
+        status: "success",
+        message: "Audio uploaded successfully",
+        data: {
+            audioUrl
+        }
+    });
+});
+
+exports.uploadMedia = catchAsync(async (req, res, next) => {
+    if (!req.file) {
+      return res.status(400).json({ error: "No media file uploaded" });
+    }
+  
+    const { path: url, originalname: name, mimetype, filename: public_id, size } = req.file;
+  
+    res.status(200).json({
+      status: "success",
+      message: "Media file uploaded successfully",
+      data: {
+        url,
+        name,
+        size,
+        type: mimetype,
+        public_id,
+      }
+    });
+});
+  
+  

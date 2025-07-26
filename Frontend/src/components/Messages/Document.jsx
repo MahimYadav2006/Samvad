@@ -1,7 +1,7 @@
 import React from 'react';
 import { FileIcon } from '@phosphor-icons/react';
 import { DownloadSimpleIcon,CheckIcon, ChecksIcon } from '@phosphor-icons/react';
-export default function Document({incoming,author,timestamp,read_receipt,}) {
+export default function Document({text,incoming,author,timestamp,read_receipt,document}) {
   return (
     incoming? (
       <div className='max-w-125 w-fit'>
@@ -13,15 +13,21 @@ export default function Document({incoming,author,timestamp,read_receipt,}) {
                 <FileIcon size={20}></FileIcon>
               </div>
               <div className='flex flex-col'>
-                <div>admin_v1.0.zip</div>
-                <div className='text-sm font-medium'>12.5 MB</div>
+                <div>{document.name}</div>
+                <div className='text-sm font-medium'>{document.size/1000} KB</div>
               </div>
             </div>
-            <button className='pl-5'>
-              <DownloadSimpleIcon></DownloadSimpleIcon>
-            </button>
+            <a
+              href={document.url}
+              download={document.name} 
+              target="_blank"
+              rel="noopener noreferrer"
+              className="pl-5"
+            >
+              <DownloadSimpleIcon />
+            </a>
           </div>
-          <p>A Dummu Text for Development</p>
+          <p>{text}</p>
         </div>
         <p className='text-xs'>{timestamp}</p>
       </div>
@@ -34,15 +40,21 @@ export default function Document({incoming,author,timestamp,read_receipt,}) {
                 <FileIcon size={20}></FileIcon>
               </div>
               <div className='flex flex-col'>
-                <div>admin_v1.0.zip</div>
-                <div className='text-sm font-medium'>12.5 MB</div>
+                <div>{document.name}</div>
+                <div className='text-sm font-medium'>{document.size/1000} KB</div>
               </div>
             </div>
-            <button className='pl-5'>
-              <DownloadSimpleIcon></DownloadSimpleIcon>
-            </button>
+            <a
+              href={document.url}
+              download={document.name} 
+              target="_blank"
+              rel="noopener noreferrer"
+              className="pl-5"
+            >
+              <DownloadSimpleIcon />
+            </a>
           </div>
-          <p>A Dummu Text for Development</p>
+          <p>{text}</p>
         </div>
       <div className="flex flex-row items-center justify-end space-x-2">
         <div className={`${read_receipt !== "read" ? "text-body dark:text-white" : "text-primary"}`}>

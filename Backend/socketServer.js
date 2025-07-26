@@ -49,6 +49,19 @@ const registerSocketServer = (server) => {
         socket.on("stop-typing", (data) => {
             stopTypingHandler(socket, data, io);
         });
+        
+        socket.on("call-user", ({ to, offer }) => {
+            io.to(to).emit("incoming-call", { from: socket.id, offer });
+        });
+
+        socket.on("answer-call", ({ to, answer }) => {
+            io.to(to).emit("call-answered", { from: socket.id, answer });
+        });
+
+        socket.on("ice-candidate", ({ to, candidate }) => {
+            io.to(to).emit("ice-candidate", { from: socket.id, candidate });
+        });
+
     });
 }
 

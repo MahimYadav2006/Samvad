@@ -1,13 +1,16 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { XIcon, PaperPlaneTiltIcon } from "@phosphor-icons/react";
 import { useDispatch, useSelector } from "react-redux";
 import { toggleGifModal } from "../redux/slices/app";
+import { newDirectMessage } from "../redux/slices/chat";
 
 export default function GifModal() {
   const  gif  = useSelector((state) => state.app.modals.gif);
   const selectedGifUrl = useSelector((state) => state.app.selectedGifUrl);
   const dispatch = useDispatch();
   const modalRef = useRef(null);
+  const [messageText, setMessageText] = useState("");
+  const user = useSelector((state) => state.auth.user);
 
   useEffect(() => {
     const keyHandler = (event) => {
@@ -23,6 +26,15 @@ export default function GifModal() {
 
     return () => document.removeEventListener("keydown", keyHandler);
   }, [gif, dispatch]);
+
+  const handleSendMessage = (e) => {
+    e.preventDefault();
+    // if (!messageText.trim()) return;
+    if(!selectedGifUrl) return;
+    dispatch(newDirectMessage({ content: messageText, author: user._id, media: null ,audioUrl: null, document:null ,type:null ,giphyUrl:selectedGifUrl }));
+    // console.log("Inside GifModal.jsx", selectedGifUrl);
+    setMessageText("");
+  };
 
   return (
     <div
@@ -64,8 +76,10 @@ export default function GifModal() {
             type="text"
             className="border rounded-lg hover:border-primary outline-none w-full p-2 border-stroke dark:border-strokedark bg-transparent dark:bg-form-input"
             placeholder="Type your message.."
+            value={messageText}
+            onChange={(e) => setMessageText(e.target.value)}
           />
-          <button className="p-2.5 border border-primary flex items-center justify-center rounded-lg bg-primary hover:bg-opacity-90 text-white">
+          <button className="p-2.5 border border-primary flex items-center justify-center rounded-lg bg-primary hover:bg-opacity-90 text-white" onClick={handleSendMessage}>
             <PaperPlaneTiltIcon size={20} weight="bold"></PaperPlaneTiltIcon>
           </button>
         </div>
