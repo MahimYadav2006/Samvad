@@ -3,7 +3,8 @@ import { PauseIcon, PlayIcon } from "@phosphor-icons/react";
 import WaveSurfer from "wavesurfer.js";
 import SampleAudioFile from "../assets/audio/sample_audio.webm";
 
-export default function Waveform({ incoming = false, audioUrl = SampleAudioFile }) {
+export default function Waveform({ incoming = false, audioUrl = SampleAudioFile}) {
+  // console.log("Inside Waveform.jsx, audioUrl is", audioUrl);
   const waveformRef = useRef(null);
   const [waveSurfer, setWaveSurfer] = useState(null);
   const [isPlaying, setIsPlaying] = useState(false);

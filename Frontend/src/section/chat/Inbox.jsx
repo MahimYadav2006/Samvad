@@ -150,6 +150,7 @@ function Inbox({otherPerson}) {
             );
           }
           else if(message.audioUrl !== null){
+            // console.log("Inside Inbox.jsx, Audio Message is", message.audioUrl);
             return (
               <VoiceMessage audioUrl={message.audioUrl} incoming={message.author !== user._id} author={message.author} key={index}/>
             )
