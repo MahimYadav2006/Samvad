@@ -14,6 +14,7 @@ export const useCall = () => {
 
 export const CallProvider = ({ children }) => {
   const { user } = useSelector((state) => state.auth);
+  const fullUser = useSelector((state) => state.user.user);
   const socket = useSelector((state) => state.user.socket);
   // const [socket, setSocket] = useState(null);
   const [isCallActive, setIsCallActive] = useState(false);
@@ -128,7 +129,7 @@ const initiateCall = async (recipient, type = "video") => {
       to: recipient._id,
       offer,
       from: user._id,
-      callerName: user.name,
+      callerName: fullUser.name,
     });
     console.log("✅ Offer sent successfully");
   } catch (error) {
