@@ -10,6 +10,7 @@ const initialState = {
     currConversation: null, // to store current conversation ID
     currMessages: [],
     oppositeUser: {},
+    socket: null,
 };
 
 const slice = createSlice({
@@ -34,6 +35,9 @@ const slice = createSlice({
         setOppositeUser(state, action) {
             state.oppositeUser = action.payload;
         },
+        setSocket(state, action) {
+            state.socket = action.payload;
+        },
         addCurrMessage(state, action) {
             state.currMessages.push(action.payload);
         },
@@ -44,9 +48,10 @@ const slice = createSlice({
 export default slice.reducer;
 const { addCurrMessage } = slice.actions;
 export { addCurrMessage };
-export const { reset } = slice.actions;
-const {setLoading,setError,setUser,setCurrentConversation,setCurrMessages,setOppositeUser} = slice.actions;
 
+export const { reset } = slice.actions;
+const {setLoading,setError,setUser,setCurrentConversation,setCurrMessages,setOppositeUser,setSocket} = slice.actions;
+export {setSocket};
 
 export function findUser(currId) {
     return async (dispatch, getState) => {

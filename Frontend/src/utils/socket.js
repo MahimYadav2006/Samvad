@@ -3,15 +3,19 @@ import { reset as resetUser } from "../redux/slices/user";
 import { reset as resetAuth } from "../redux/slices/auth";
 import { reset as resetChat } from "../redux/slices/chat";
 import { reset as resetApp } from "../redux/slices/app";
+import { setSocket } from "../redux/slices/user";
+// import { dispatch } from "../redux/store";
 let socket = null;
 
 export const connectSocket =  (token, store) => {
+  const { dispatch } = store;
   socket = io("http://localhost:8000", {
     auth: { token },
   });
 
   socket.on("connect", () => {
-    console.log("✅ Socket connected! ID:", socket.id);
+    console.log("✅ Socket connected!  and setted socket ID:", socket.id);
+    dispatch(setSocket(socket));
   });
 
   socket.on("connect_error", (err) => {

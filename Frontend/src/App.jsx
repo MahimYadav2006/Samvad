@@ -1,5 +1,5 @@
 import { react, useEffect } from "react";
-import { Route, Routes, Navigate } from "react-router-dom";
+import { Route, Routes, Navigate, Router } from "react-router-dom";
 import Messages from "./pages/Messages.jsx";
 import Login from "./pages/auth/Login.jsx";
 import Signup from "./pages/auth/Signup.jsx";
@@ -13,11 +13,18 @@ import { findUser } from "./redux/slices/user.js";
 import { fetchUserList } from "./redux/slices/chat.js";
 import Protect from "./utils/Protect.jsx";
 import { store } from "./redux/store";
+import { CallProvider } from "./context/CallContext";
+import VideoCallModal from "./components/VideoCall/VideoCallModal";
+import IncomingCallModal from "./components/VideoCall/IncomingCallModal";
+import { getSocket } from "./utils/socket.js";
 
 function App() {
-  const token = useSelector((state) => state.auth.token);  
+  const token = useSelector((state) => state.auth.token);
   const dispatch = useDispatch();
+  const  user  = useSelector((state) => state.auth.user);
   const currId = useSelector((state) => state.auth.user._id);
+  const socket = useSelector((state) => state.user.socket);
+  // const socket = getSocket();
   useEffect(() => {
     const colorMode = JSON.parse(window.localStorage.getItem("color-theme"));
     const className = "dark";
@@ -27,16 +34,45 @@ function App() {
       : bodyClass.remove(className);
   }, []);
 
-  useEffect( () => {
+  useEffect(() => {
     if (token) {
-      connectSocket(token,store);
+      connectSocket(token, store);
       dispatch(findUser(currId));
     } else {
       disconnectSocket();
     }
     return () => disconnectSocket(store);
   }, [token]);
-  
+
+  // useEffect(() => {
+  //   if (currId && socket!= null) {
+  //     // Join user's room
+  //     socket.emit("user:join", currId);
+  //   }
+  // }, [currId,socket]);
+
+
+    useEffect(() => {
+    if(!socket) return;
+    if (user && user._id) {
+      console.log("🔌 Joining socket room for user:", user._id);
+      socket.emit("user:join", user._id);
+      
+      // Verify join
+      
+      socket.on("connect", () => {
+        console.log("✅ Socket connected:", socket.id);
+        socket.emit("user:join", user._id);
+      });
+    }
+
+    return () => {
+      socket.off("connect");
+    };
+  }, [user,socket]);
+
+
+
   // let userList = useSelector((state)=> state.chat.userList);
   // useEffect(()=>{
   //   if(token != null || token != undefined){
@@ -48,30 +84,34 @@ function App() {
   // let userList = useSelector((state)=> state.chat.userList);
   // console.log("Inside App.jsx I have fetched the userList",userList);
   return (
-    <Routes>
-      {/* <Route index={true} path="/" element={<Messages />} /> */}
+    <CallProvider>
+      <Routes>
+        {/* <Route index={true} path="/" element={<Messages />} /> */}
 
-      {/* Redirect '/' to '/auth/login' */}
-      <Route path="/" element={<Navigate to="/auth/login" />} />
+        {/* Redirect '/' to '/auth/login' */}
+        <Route path="/" element={<Navigate to="/auth/login" />} />
 
-      <Route path="/auth/login" element={<Login />} />
-      <Route path="/auth/signup" element={<Signup />} />
-      <Route path="/auth/verify" element={<Verification />}></Route>
+        <Route path="/auth/login" element={<Login />} />
+        <Route path="/auth/signup" element={<Signup />} />
+        <Route path="/auth/verify" element={<Verification />}></Route>
 
-      <Route path="/dashboard" element={<Layout />}>
-        <Route index element={
-          <Protect>
-            <Messages />
-          </Protect>
-        } />
-        <Route path="profile" element={
-          <Protect>
-            <ProfilePage />
-          </Protect>
-        } />
-      </Route>
+        <Route path="/dashboard" element={<Layout />}>
+          <Route index element={
+            <Protect>
+              <Messages />
+            </Protect>
+          } />
+          <Route path="profile" element={
+            <Protect>
+              <ProfilePage />
+            </Protect>
+          } />
+        </Route>
 
-    </Routes>
+      </Routes>
+      <IncomingCallModal></IncomingCallModal>
+      <VideoCallModal></VideoCallModal>
+    </CallProvider>
   );
 }
 
