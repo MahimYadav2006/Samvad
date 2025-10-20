@@ -20,8 +20,6 @@ import Attachment from "../../components/Attachment";
 import MsgSeparator from "../../components/MsgSeparator";
 import TypingIndicator from "../../components/TypingIndicator";
 import { TextMessage, DocumentMessage, VoiceMessage } from "../../components/Messages/index";
-import VideoRoom from "../../components/VideoRoom";
-import AudioRoom from "../../components/AudioRoom";
 import { startConversation } from "../../redux/slices/user";
 import { newDirectMessage } from "../../redux/slices/chat";
 import { findOppositeUser } from "../../redux/slices/user";
