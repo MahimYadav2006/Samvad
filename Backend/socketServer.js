@@ -54,8 +54,8 @@ const registerSocketServer = (server) => {
         });
 
         // WebRTC Call Handlers
-        socket.on("call:initiate", ({ to, offer, from, callerName }) => {
-            console.log(`📞 Call from ${from} (${callerName}) to ${to}`);
+        socket.on("call:initiate", ({ to, offer, from, callerName, type }) => {
+            console.log(`📞 Call from ${from} (${callerName}) to ${to} of type ${type}`);
 
             const recipientSocketId = userSocketMap.get(to);
 
@@ -65,6 +65,7 @@ const registerSocketServer = (server) => {
                     from,
                     offer,
                     callerName,
+                    type,
                 });
             } else {
                 console.log(`❌ Recipient ${to} not found in userSocketMap`);

@@ -130,6 +130,7 @@ const initiateCall = async (recipient, type = "video") => {
       offer,
       from: user._id,
       callerName: fullUser.name,
+      type: type,
     });
     console.log("✅ Offer sent successfully");
   } catch (error) {
@@ -147,8 +148,8 @@ const initiateCall = async (recipient, type = "video") => {
       setIsCallActive(true);
       setCallType(incomingCall.type || "video");
       setRemoteUser({ _id: incomingCall.from });
-
-      await getUserMedia(true, true);
+      // console.log("###### DEBUGGING ####### incomingCall is ",incomingCall);
+      await getUserMedia(incomingCall.type === "video", true); // #AudioCallBug
       const peerConnection = createPeerConnection();
 
       await peerConnection.setRemoteDescription(
