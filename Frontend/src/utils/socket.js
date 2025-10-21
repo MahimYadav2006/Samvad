@@ -6,10 +6,11 @@ import { reset as resetApp } from "../redux/slices/app";
 import { setSocket } from "../redux/slices/user";
 // import { dispatch } from "../redux/store";
 let socket = null;
+let BASE_URL = "https://samvad-backend-latest.onrender.com";
 
 export const connectSocket =  (token, store) => {
   const { dispatch } = store;
-  socket = io("http://localhost:8000", {
+  socket = io(BASE_URL, {
     auth: { token },
   });
 

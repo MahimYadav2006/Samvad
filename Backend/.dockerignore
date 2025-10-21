@@ -1,0 +1,22 @@
+# Dependencies
+node_modules
+npm-debug.log
+yarn-error.log
+
+# Local environment
+.env
+config.env
+
+# Logs
+logs
+*.log
+
+# System junk
+.DS_Store
+.git
+.gitignore
+.vscode
+
+# Docker stuff
+Dockerfile
+docker-compose.yml
