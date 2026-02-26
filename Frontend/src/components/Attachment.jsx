@@ -14,14 +14,14 @@ function Attachment() {
       if (
         !dropdown ||
         dropdown.current.contains(target) ||
-        trigger.current.contains(target)
+        trigger.current?.contains(target)
       )
         return;
       setDropdownOpen(false);
     };
     document.addEventListener("click", clickHandler);
     return () => document.removeEventListener("click", clickHandler);
-  });
+  }, []);
 
   useEffect(() => {
     const keyHandler = ({ keyCode }) => {
@@ -30,12 +30,12 @@ function Attachment() {
     };
     document.addEventListener("keydown", keyHandler);
     return () => document.removeEventListener("keydown", keyHandler);
-  });
+  }, [dropdownOpen]);
 
   return (
     <>
       <button
-        className="text-[#98A6AD] hover:text-body"
+        className="text-bodydark2 hover:text-primary"
         ref={trigger}
         onClick={(e) =>{
             e.preventDefault();
@@ -48,17 +48,17 @@ function Attachment() {
         ref={dropdown}
         onFocus={() => setDropdownOpen(true)}
         onBlur={() => setDropdownOpen(false)}
-        className={`absolute right-0 -top-24 z-40 space-40 space-y-1 rounded-sm border border-stroke bg-white p-1.5 shadow-default dark:border-strokedark dark:bg-boxdark ${
+        className={`absolute right-0 -top-24 z-40 space-y-1 rounded-xl border border-stroke bg-white p-1.5 shadow-xl dark:border-strokedark dark:bg-boxdark ${
           dropdownOpen ? "block" : "hidden"
         }`}
         onClick={(e)=> e.preventDefault()}
       >
-        <button className="flex w-54 items-center gap-2 rounded-sm px-5 py-1.5 text-left text-sm hover:bg-gray dark:hover:bg-meta-4" onClick={()=> dispatch(toggleMediaModal(true))}>
+        <button className="flex w-54 items-center gap-2 rounded-lg px-4 py-2 text-left text-sm font-semibold hover:bg-gray dark:hover:bg-meta-4" onClick={()=> dispatch(toggleMediaModal(true))}>
           <ImageIcon size={20}></ImageIcon>
           Images & Videos
         </button>
 
-        <button className="flex w-full items-center gap-2 rounded-sm px-5 py-1.5 text-left text-sm hover:bg-gray dark:hover:bg-meta-4" onClick={()=> dispatch(toggleDocumentModal(true))}>
+        <button className="flex w-full items-center gap-2 rounded-lg px-4 py-2 text-left text-sm font-semibold hover:bg-gray dark:hover:bg-meta-4" onClick={()=> dispatch(toggleDocumentModal(true))}>
           <FileIcon size={20}></FileIcon>
           Files and documents
         </button>

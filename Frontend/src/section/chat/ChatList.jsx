@@ -1,77 +1,119 @@
-import { MagnifyingGlassIcon } from "@phosphor-icons/react";
-import react, { useState, useEffect } from "react";
-import { useSelector, useDispatch } from "react-redux";
-
+import { MagnifyingGlassIcon, ChatCircleTextIcon } from "@phosphor-icons/react";
+import { useMemo, useState } from "react";
 import dummyAvatar from "../../images/user/user-01.png";
-import { startConversation } from "../../redux/slices/user";
-import setCurrMessages from "../../redux/slices/user";
 
+function ChatList({
+  otherPerson,
+  setOtherPerson,
+  userList,
+  onConversationSelected,
+  className = "",
+}) {
+  const [query, setQuery] = useState("");
 
-function ChatList({otherPerson, setOtherPerson,userList}) {
-  let [selected, setSelected] = useState(0);
+  const filteredUsers = useMemo(() => {
+    if (!query.trim()) return userList || [];
+    const keyword = query.trim().toLowerCase();
+    return (userList || []).filter((user) =>
+      `${user.name || ""}`.toLowerCase().includes(keyword)
+    );
+  }, [userList, query]);
 
-  const dispatch = useDispatch();
-
+  const handleSelect = (userId) => {
+    setOtherPerson(userId);
+    if (onConversationSelected) onConversationSelected(userId);
+  };
 
   return (
-    <div className="hidden md:flex h-full flex-col md:w-1/4">
-      <div className="sticky border-b border-stroke px-6 dark:border-strokedark py-7.5 flex flex-row gap-x-4">
-        <h3 className="text-lg font-medium text-black dark:text-white 2xl:text-xl">
-          Chat List
-        </h3>
-        <span className="rounded-md border-[.5px] border-stroke dark:border-strokedark bg-gray px-2 py-0.5 text-base font-medium text-black dark:bg-boxdark-2 dark:text-white 2xl:ml-4">
-          {userList.length}
-        </span>
-      </div>
+    <aside
+      className={`flex min-h-0 shrink-0 flex-col border-r border-stroke/70 bg-white/55 dark:border-strokedark/70 dark:bg-boxdark/20 ${className}`}
+    >
+      <div className="border-b border-stroke/70 px-4 py-4 dark:border-strokedark/70 md:px-6 md:py-5">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="font-display text-xl font-bold text-black dark:text-white">
+              Chats
+            </h3>
+            <p className="text-xs font-medium text-body dark:text-bodydark">
+              {userList.length} contact{userList.length === 1 ? "" : "s"}
+            </p>
+          </div>
+          <span className="rounded-xl bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
+            Active
+          </span>
+        </div>
 
-      <div className="flex max-h-full flex-col overflow-auto p-5">
-        <form action="" className="sticky mb-7">
+        <div className="relative mt-4">
           <input
             type="text"
-            placeholder="Search..."
-            className="w-full rounded border border-stroke bg-gray-2 py-2.5 pl-5 pr-10 text-sm outline-none focus:border-primary dark:border-strokedark dark:bg-boxdark-2"
+            placeholder="Search conversations..."
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            className="w-full rounded-xl border border-stroke bg-white py-2.5 pl-10 pr-4 text-sm text-black placeholder:text-body dark:border-form-strokedark dark:bg-form-input dark:text-white"
           />
-          <button className="absolute right-4 top-1/2 -translate-y-1/2">
-            <MagnifyingGlassIcon size={20}></MagnifyingGlassIcon>
-          </button>
-        </form>
-
-        <div className="no-scrollbar overflow-auto max-h-full space-y-2.5">
-          {(userList || []).map((object, item) => {
-            return (
-              <div
-                className={`flex cursor-pointer items-center rounded px-4 py-2  ${
-                  selected === item
-                    ? "bg-gray dark:bg-boxdark-2"
-                    : "hover:bg-gray-2 dark:hover:bg-strokedark"
-                } `}
-                key={item}
-                onClick={() => {
-                  setSelected(item);
-                  setOtherPerson(object._id);
-                  dispatch(startConversation({ userId: object._id }));
-                }}
-              >
-                <div className="relative mr-3.5 h-11 w-full max-w-11 rounded-full">
-                  <img
-                    src={object.avatar || dummyAvatar}
-                    alt="profile"
-                    className="h-full w-full rounded-full object-cover object-center"
-                  />
-                  <span className={`absolute bottom-0 right-0 block h-3 w-3 rounded-full border-2 border-gray-2 ${object.status === "online" ? "bg-success": "bg-gray"}`}></span>
-                </div>
-                <div className="w-full">
-                  <h5 className="text-sm font-medium text-black dark:text-white">
-                    {object.name}
-                  </h5>
-                  <p className="text-sm">{object.message || "Start Conversation"}</p>
-                </div>
-              </div>
-            );
-          })}
+          <MagnifyingGlassIcon
+            size={18}
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-bodydark2"
+          />
         </div>
       </div>
-    </div>
+
+      <div className="fancy-scrollbar no-scrollbar flex-1 overflow-y-auto p-3 md:p-4">
+        {filteredUsers.length === 0 ? (
+          <div className="mt-10 flex flex-col items-center justify-center rounded-2xl border border-dashed border-stroke p-6 text-center dark:border-strokedark">
+            <ChatCircleTextIcon size={34} className="mb-3 text-bodydark2" />
+            <p className="text-sm font-semibold text-black dark:text-white">
+              No chats found
+            </p>
+            <p className="mt-1 text-xs text-body dark:text-bodydark">
+              Try another search keyword.
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {filteredUsers.map((user) => {
+              const isActive = otherPerson === user._id;
+              const isOnline = `${user.status || ""}`.toLowerCase() === "online";
+
+              return (
+                <button
+                  type="button"
+                  key={user._id}
+                  onClick={() => handleSelect(user._id)}
+                  className={`flex w-full items-center gap-3 rounded-2xl border px-3 py-2.5 text-left transition md:px-4 ${
+                    isActive
+                      ? "border-primary/30 bg-primary/10"
+                      : "border-transparent bg-white/70 hover:border-stroke hover:bg-gray-2 dark:bg-boxdark/30 dark:hover:border-strokedark dark:hover:bg-meta-4/60"
+                  }`}
+                >
+                  <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-2xl">
+                    <img
+                      src={user.avatar || dummyAvatar}
+                      alt="profile"
+                      className="h-full w-full object-cover object-center"
+                    />
+                    <span
+                      className={`absolute bottom-0 right-0 h-3.5 w-3.5 rounded-full border-2 border-white dark:border-boxdark ${
+                        isOnline ? "bg-success" : "bg-graydark"
+                      }`}
+                    />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-semibold text-black dark:text-white">
+                      {user.name}
+                    </p>
+                    <p className="text-xs text-body dark:text-bodydark">
+                      {isOnline ? "Online" : "Tap to chat"}
+                    </p>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </aside>
   );
 }
+
 export default ChatList;

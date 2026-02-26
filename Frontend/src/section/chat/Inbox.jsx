@@ -1,61 +1,54 @@
 import User01 from "../../images/user/user-01.png";
 import {
-  DotsThreeIcon,
   PaperPlaneTiltIcon,
-  LinkSimpleIcon,
-  SmileyIcon,
   VideoCameraIcon,
   PhoneCallIcon,
   GifIcon,
-  MicrophoneIcon
+  MicrophoneIcon,
+  CaretLeftIcon,
+  UserCircleIcon,
 } from "@phosphor-icons/react";
 import Dropdown from "../../components/Dropdown";
 import EmojiPicker from "../../components/EmojiPicker";
-import React, { useState, useEffect } from "react";
-import UserInfo from "./UserInfo";
+import React, { useState, useEffect, useRef } from "react";
 import Giphy from "../../components/Giphy";
 import { useDispatch, useSelector } from "react-redux";
 import { toggleAudioModal } from "../../redux/slices/app";
 import Attachment from "../../components/Attachment";
-import MsgSeparator from "../../components/MsgSeparator";
-import TypingIndicator from "../../components/TypingIndicator";
 import { TextMessage, DocumentMessage, VoiceMessage } from "../../components/Messages/index";
-import { startConversation } from "../../redux/slices/user";
 import { newDirectMessage } from "../../redux/slices/chat";
 import { findOppositeUser } from "../../redux/slices/user";
 import GiphyMessage from "../../components/Messages/GiphyMessage";
 import MediaMessage from "../../components/Messages/MediaMessage";
 import { useCall } from "../../context/CallContext";
+import UserInfo from "./UserInfo";
 
-function Inbox({ otherPerson }) {
+function Inbox({ otherPerson, onBackToList, className = "" }) {
   const dispatch = useDispatch();
-  const { initiateCall } = useCall(); // WebRTC call hook
-  
-  const [userInfoOpen, setUserInfoOpen] = useState(false);
+  const { initiateCall } = useCall();
+
   const [gifOpen, setGifOpen] = useState(false);
   const [messageText, setMessageText] = useState("");
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const messagesContainerRef = useRef(null);
+  const previousConversationRef = useRef(null);
+  const previousMessageCountRef = useRef(0);
 
   useEffect(() => {
     if (otherPerson !== null) {
-      console.log("Entered the inbox and finded and started the conversation with the otherperson", otherPerson);
-      dispatch(startConversation(otherPerson));
       dispatch(findOppositeUser(otherPerson));
-    } else {
-      console.log("Entered the inbox but otherperson is null");
     }
   }, [dispatch, otherPerson]);
 
   const currMessages = useSelector((state) => state.user.currMessages);
   const oppositeUser = useSelector((state) => state.user.oppositeUser);
   const user = useSelector((state) => state.user.user);
+  const currentUserId = user?._id;
+  const hasConversation = Boolean(otherPerson);
 
   const handleToggleGif = (e) => {
     e.preventDefault();
     setGifOpen((prev) => !prev);
-  };
-
-  const handleToggleUserInfo = () => {
-    setUserInfoOpen((prev) => !prev);
   };
 
   const handleMicClick = (e) => {
@@ -63,207 +56,302 @@ function Inbox({ otherPerson }) {
     dispatch(toggleAudioModal(true));
   };
 
-  // Updated Video Call Handler using WebRTC
   const handleToggleVideoCall = (e) => {
     e.preventDefault();
     if (oppositeUser && oppositeUser._id) {
       initiateCall(oppositeUser, "video");
-    } else {
-      console.error("Cannot initiate call: oppositeUser not found");
     }
   };
 
-  // Updated Audio Call Handler using WebRTC
   const handleToggleAudioCall = (e) => {
     e.preventDefault();
     if (oppositeUser && oppositeUser._id) {
       initiateCall(oppositeUser, "audio");
-    } else {
-      console.error("Cannot initiate call: oppositeUser not found");
     }
   };
 
-  const handleSendMessage = (e) => {
-    e.preventDefault();
-    if (!messageText.trim()) return;
+  const scrollToBottom = (behavior = "auto") => {
+    const container = messagesContainerRef.current;
+    if (!container) return;
+    container.scrollTo({
+      top: container.scrollHeight,
+      behavior,
+    });
+  };
 
-    dispatch(newDirectMessage({ 
-      content: messageText, 
-      author: user._id, 
-      media: null, 
-      audioUrl: null, 
-      document: null, 
-      type: null, 
-      giphyUrl: null 
-    }));
+  useEffect(() => {
+    if (!hasConversation) return;
+
+    const nextMessageCount = currMessages?.length || 0;
+    const isConversationChanged = previousConversationRef.current !== otherPerson;
+
+    if (isConversationChanged) {
+      requestAnimationFrame(() => scrollToBottom("auto"));
+    } else if (nextMessageCount > previousMessageCountRef.current) {
+      requestAnimationFrame(() => scrollToBottom("smooth"));
+    }
+
+    previousConversationRef.current = otherPerson;
+    previousMessageCountRef.current = nextMessageCount;
+  }, [currMessages, otherPerson, hasConversation]);
+
+  useEffect(() => {
+    setIsProfileOpen(false);
+  }, [otherPerson]);
+
+  useEffect(() => {
+    if (!isProfileOpen) return undefined;
+
+    const closeOnEsc = (event) => {
+      if (event.key === "Escape") {
+        setIsProfileOpen(false);
+      }
+    };
+
+    window.addEventListener("keydown", closeOnEsc);
+    return () => window.removeEventListener("keydown", closeOnEsc);
+  }, [isProfileOpen]);
+
+  const handleSendMessage = () => {
+    if (!messageText.trim() || !currentUserId) return;
+
+    dispatch(
+      newDirectMessage({
+        content: messageText,
+        author: currentUserId,
+        media: null,
+        audioUrl: null,
+        document: null,
+        type: null,
+        giphyUrl: null,
+      })
+    );
     setMessageText("");
   };
 
   return (
-    <>
-      <div className={`flex h-full flex-col border-l border-stroke p-2 dark:border-strokedark ${userInfoOpen ? "w-1/2" : "w-3/4"}`}>
-        {/* Chat Header - Updated with WebRTC Integration */}
-        <div className="sticky flex items-center flex-row justify-between border-b dark:border-strokedark px-6 py-4.5">
-          <div className="flex items-center cursor-pointer" onClick={handleToggleUserInfo}>
-            <div className="mr-4.5 h-13 w-full max-w-13 overflow-hidden rounded-full">
-              <img
-                src={oppositeUser.avatar || User01}
-                alt="avatar"
-                className="w-full h-full object-cover object-center"
-              />
+    <div className={`relative h-full min-w-0 w-full ${className}`}>
+      <div className="flex h-full min-w-0 w-full flex-col bg-white/30 dark:bg-boxdark/30">
+          <header className="flex items-center justify-between border-b border-stroke/70 px-3 py-3 md:px-5 md:py-4 dark:border-strokedark/70">
+            <div className="flex min-w-0 items-center gap-3">
+              <button
+                type="button"
+                onClick={onBackToList}
+                className="flex h-9 w-9 items-center justify-center rounded-xl border border-stroke bg-white text-body dark:border-strokedark dark:bg-boxdark md:hidden"
+              >
+                <CaretLeftIcon size={18} />
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsProfileOpen(true)}
+                disabled={!oppositeUser || !oppositeUser._id}
+                className="flex min-w-0 items-center gap-3 text-left disabled:opacity-80"
+              >
+                <div className="h-11 w-11 shrink-0 overflow-hidden rounded-2xl">
+                  <img
+                    src={oppositeUser.avatar || User01}
+                    alt="avatar"
+                    className="h-full w-full object-cover object-center"
+                  />
+                </div>
+                <div className="min-w-0">
+                  <h5 className="truncate text-sm font-bold text-black dark:text-white md:text-base">
+                    {oppositeUser.name || "Select a chat"}
+                  </h5>
+                  <p className="text-xs text-body dark:text-bodydark">
+                    {`${oppositeUser.status || "Offline"}`}
+                  </p>
+                </div>
+              </button>
             </div>
-            <div>
-              <h5 className="font-medium text-black dark:text-white">
-                {oppositeUser.name || "User Name"}
-              </h5>
-              <p className="text-xs text-gray-500 dark:text-gray-400">
-                {oppositeUser.online ? "Online" : "Offline"}
-              </p>
+
+            <div className="relative flex items-center gap-1.5 md:gap-2">
+              <button
+                onClick={() => setIsProfileOpen(true)}
+                className="flex h-9 w-9 items-center justify-center rounded-xl border border-stroke bg-white text-body hover:border-primary hover:text-primary disabled:opacity-50 dark:border-strokedark dark:bg-boxdark-2 dark:text-bodydark md:h-10 md:w-10"
+                title="View profile"
+                disabled={!oppositeUser || !oppositeUser._id}
+                type="button"
+              >
+                <UserCircleIcon size={18} />
+              </button>
+
+              <button
+                onClick={handleToggleVideoCall}
+                className="flex h-9 w-9 items-center justify-center rounded-xl border border-stroke bg-white text-body hover:border-primary hover:text-primary disabled:opacity-50 dark:border-strokedark dark:bg-boxdark-2 dark:text-bodydark md:h-10 md:w-10"
+                title="Start Video Call"
+                disabled={!oppositeUser || !oppositeUser._id}
+                type="button"
+              >
+                <VideoCameraIcon size={18} />
+              </button>
+
+              <button
+                onClick={handleToggleAudioCall}
+                className="flex h-9 w-9 items-center justify-center rounded-xl border border-stroke bg-white text-body hover:border-primary hover:text-primary disabled:opacity-50 dark:border-strokedark dark:bg-boxdark-2 dark:text-bodydark md:h-10 md:w-10"
+                title="Start Audio Call"
+                disabled={!oppositeUser || !oppositeUser._id}
+                type="button"
+              >
+                <PhoneCallIcon size={18} />
+              </button>
+
+              <Dropdown />
             </div>
-          </div>
+          </header>
 
-          <div className="flex flex-row align-center space-x-4">
-            {/* Video Call Button */}
-            <button
-              onClick={handleToggleVideoCall}
-              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-all"
-              title="Start Video Call"
-              disabled={!oppositeUser || !oppositeUser._id}
-            >
-              <VideoCameraIcon size={24} className="text-gray-700 dark:text-gray-300" />
-            </button>
-
-            {/* Audio Call Button */}
-            <button
-              onClick={handleToggleAudioCall}
-              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-all"
-              title="Start Audio Call"
-              disabled={!oppositeUser || !oppositeUser._id}
-            >
-              <PhoneCallIcon size={24} className="text-gray-700 dark:text-gray-300" />
-            </button>
-
-            {/* More Options */}
-            <Dropdown />
-          </div>
-        </div>
-
-        {/* Messages */}
-        <div className="max-h-full space-y-3.5 overflow-auto no-scrollbar px-6 py-7.5 grow">
-          {currMessages && currMessages.length === 0 && (
-            <div className="flex items-center justify-center m-auto dark:text-white text-black">
-              Send Message and Start Conversation
-            </div>
-          )}
-          
-          {currMessages && currMessages.map((message, index) => {
-            if (message.content !== null && message.giphyUrl === null && message.media === null && message.audioUrl === null && (message.document === null || message.document === undefined)) {
-              return (
-                <TextMessage
-                  key={index}
-                  author={message.author}
-                  content={message.content}
-                  read_receipt={message.read_receipt}
-                  incoming={message.author !== user._id}
-                />
-              );
-            } else if (message.document !== null && message.document !== undefined) {
-              return (
-                <DocumentMessage
-                  key={index}
-                  author={message.author}
-                  text={message.content}
-                  incoming={message.author !== user._id}
-                  document={message.document}
-                />
-              );
-            } else if (message.audioUrl !== null) {
-              return (
-                <VoiceMessage 
-                  audioUrl={message.audioUrl} 
-                  incoming={message.author !== user._id} 
-                  author={message.author} 
-                  key={index}
-                />
-              );
-            } else if (message.giphyUrl !== null) {
-              return (
-                <GiphyMessage
-                  key={index}
-                  incoming={message.author !== user._id}
-                  author={message.author}
-                  timestamp={message.timestamp}
-                  read_receipt={message.read_receipt}
-                  giphyUrl={message.giphyUrl}
-                  content={message.content}
-                />
-              );
-            } else if (message.media != null && message.media.length > 0) {
-              return (
-                <MediaMessage
-                  key={index}
-                  incoming={message.author !== user._id}
-                  author={message.author}
-                  timestamp={message.timestamp}
-                  read_receipt={message.read_receipt}
-                  media={message.media}
-                  content={message.content}
-                />
-              );
-            }
-            return null;
-          })}
-        </div>
-
-        {/* Input Section */}
-        <div className="sticky bottom-0 border-t border-stroke bg-white px-6 py-5 dark:border-strokedark dark:bg-boxdark">
-          <form
-            onSubmit={handleSendMessage}
-            className="flex items-center justify-between space-x-4.5"
+          <div
+            ref={messagesContainerRef}
+            className="fancy-scrollbar no-scrollbar flex-1 space-y-3 overflow-y-auto px-3 py-4 md:px-6 md:py-6"
           >
-            <div className="relative w-full">
-              <input
-                type="text"
-                placeholder="Type your message..."
-                value={messageText}
-                onChange={(e) => setMessageText(e.target.value)}
-                className="h-13 w-full rounded-md border border-stroke bg-gray pl-5 pr-19 text-black placeholder-body outline-none focus:border-primary dark:border-strokedark dark:bg-boxdark-2 dark:text-white"
-              />
-
-              <div className="absolute right-5 top-1/2 -translate-y-1/2 items-center justify-end space-x-4">
-                <button className="hover:text-primary" type="button">
-                  <MicrophoneIcon size={20} onClick={handleMicClick} />
-                </button>
-                <button className="hover:text-primary" type="button">
-                  <Attachment size={20} />
-                </button>
-                <button className="hover:text-primary" type="button" onClick={handleToggleGif}>
-                  <GifIcon size={20} />
-                </button>
-                <button className="hover:text-primary" type="button">
-                  <EmojiPicker onEmojiSelect={(emoji) => {
-                    setMessageText((prev) => prev + emoji.native);
-                  }} />
-                </button>
+            {!hasConversation && (
+              <div className="mx-auto mt-12 max-w-md rounded-2xl border border-dashed border-stroke px-6 py-8 text-center dark:border-strokedark">
+                <p className="text-sm font-semibold text-black dark:text-white">
+                  Select a conversation to start chatting
+                </p>
+                <p className="mt-1 text-xs text-body dark:text-bodydark">
+                  Your messages will appear here in real time.
+                </p>
               </div>
-            </div>
-            <button 
-              type="submit"
-              className="flex items-center justify-center h-13 max-w-13 w-full rounded-md bg-primary text-white hover:bg-opacity-90"
-            >
-              <PaperPlaneTiltIcon size={24} weight="bold" />
-            </button>
-          </form>
-          {gifOpen && <Giphy />}
-        </div>
-      </div>
+            )}
 
-      {userInfoOpen && (
-        <div className="w-1/4">
-          <UserInfo handleToggleUserInfo={handleToggleUserInfo} />
+            {hasConversation && currMessages && currMessages.length === 0 && (
+              <div className="mx-auto mt-10 max-w-sm rounded-2xl bg-gray-2 px-4 py-3 text-center text-sm font-semibold text-body dark:bg-meta-4 dark:text-bodydark">
+                Send a message to start this conversation.
+              </div>
+            )}
+
+            {currMessages &&
+              currMessages.map((message, index) => {
+                if (
+                  message.content !== null &&
+                  message.giphyUrl === null &&
+                  message.media === null &&
+                  message.audioUrl === null &&
+                  (message.document === null || message.document === undefined)
+                ) {
+                  return (
+                    <TextMessage
+                      key={index}
+                      author={message.author}
+                      content={message.content}
+                      read_receipt={message.read_receipt}
+                      incoming={message.author !== currentUserId}
+                    />
+                  );
+                } else if (message.document !== null && message.document !== undefined) {
+                  return (
+                    <DocumentMessage
+                      key={index}
+                      author={message.author}
+                      text={message.content}
+                      incoming={message.author !== currentUserId}
+                      document={message.document}
+                    />
+                  );
+                } else if (message.audioUrl !== null) {
+                  return (
+                    <VoiceMessage
+                      audioUrl={message.audioUrl}
+                      incoming={message.author !== currentUserId}
+                      author={message.author}
+                      key={index}
+                    />
+                  );
+                } else if (message.giphyUrl !== null) {
+                  return (
+                    <GiphyMessage
+                      key={index}
+                      incoming={message.author !== currentUserId}
+                      author={message.author}
+                      timestamp={message.timestamp}
+                      read_receipt={message.read_receipt}
+                      giphyUrl={message.giphyUrl}
+                      content={message.content}
+                    />
+                  );
+                } else if (message.media != null && message.media.length > 0) {
+                  return (
+                    <MediaMessage
+                      key={index}
+                      incoming={message.author !== currentUserId}
+                      author={message.author}
+                      timestamp={message.timestamp}
+                      read_receipt={message.read_receipt}
+                      media={message.media}
+                      content={message.content}
+                    />
+                  );
+                }
+                return null;
+              })}
+          </div>
+
+          <div className="border-t border-stroke/70 bg-white/80 px-3 py-3 dark:border-strokedark/70 dark:bg-boxdark-2/70 md:px-6 md:py-4">
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleSendMessage();
+              }}
+              className="space-y-3"
+            >
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="Type your message..."
+                  value={messageText}
+                  onChange={(e) => setMessageText(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.shiftKey) {
+                      e.preventDefault();
+                      handleSendMessage();
+                    }
+                  }}
+                  className="h-12 w-full rounded-2xl border border-stroke bg-white py-2.5 pl-4 pr-36 text-sm text-black placeholder-body dark:border-form-strokedark dark:bg-form-input dark:text-white md:h-13"
+                />
+
+                <div className="absolute right-3 top-1/2 flex -translate-y-1/2 items-center gap-2 text-bodydark2">
+                  <button className="hover:text-primary" type="button" onClick={handleMicClick}>
+                    <MicrophoneIcon size={20} />
+                  </button>
+                  <Attachment />
+                  <button className="hover:text-primary" type="button" onClick={handleToggleGif}>
+                    <GifIcon size={20} />
+                  </button>
+                  <EmojiPicker
+                    onEmojiSelect={(emoji) => {
+                      setMessageText((prev) => prev + emoji.native);
+                    }}
+                  />
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                className="flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 text-sm font-bold text-white shadow-lg shadow-primary/20 hover:bg-primary/90 md:h-12"
+              >
+                <PaperPlaneTiltIcon size={18} weight="bold" />
+                Send
+              </button>
+            </form>
+            {gifOpen && <Giphy />}
+          </div>
         </div>
+
+      {isProfileOpen && (
+        <>
+          <button
+            type="button"
+            aria-label="Close profile panel"
+            className="absolute inset-0 z-20 bg-black/30 backdrop-blur-[1px]"
+            onClick={() => setIsProfileOpen(false)}
+          />
+          <aside className="absolute bottom-3 right-3 top-3 z-30 w-[min(92vw,360px)] overflow-hidden rounded-3xl border border-stroke/70 shadow-2xl shadow-black/20 dark:border-strokedark/70">
+            <UserInfo handleToggleUserInfo={() => setIsProfileOpen(false)} />
+          </aside>
+        </>
       )}
-    </>
+      </div>
   );
 }
 

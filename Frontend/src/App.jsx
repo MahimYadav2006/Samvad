@@ -1,5 +1,5 @@
-import { react, useEffect } from "react";
-import { Route, Routes, Navigate, Router } from "react-router-dom";
+import { useEffect } from "react";
+import { Route, Routes, Navigate } from "react-router-dom";
 import Messages from "./pages/Messages.jsx";
 import Login from "./pages/auth/Login.jsx";
 import Signup from "./pages/auth/Signup.jsx";
@@ -10,16 +10,17 @@ import { useSelector } from "react-redux";
 import { connectSocket, disconnectSocket } from "./utils/socket.js";
 import { useDispatch } from "react-redux";
 import { findUser } from "./redux/slices/user.js";
-import { fetchUserList } from "./redux/slices/chat.js";
+import { reset as resetAuth } from "./redux/slices/auth";
 import Protect from "./utils/Protect.jsx";
 import { store } from "./redux/store";
 import { CallProvider } from "./context/CallContext";
 import VideoCallModal from "./components/VideoCall/VideoCallModal";
 import IncomingCallModal from "./components/VideoCall/IncomingCallModal";
-import { getSocket } from "./utils/socket.js";
+import { isJwtToken } from "./utils/authToken";
 
 function App() {
   const token = useSelector((state) => state.auth.token);
+  const isValidToken = isJwtToken(token);
   const dispatch = useDispatch();
   const  user  = useSelector((state) => state.auth.user);
   const currId = useSelector((state) => state.auth.user._id);
@@ -35,14 +36,24 @@ function App() {
   }, []);
 
   useEffect(() => {
-    if (token) {
+    if (token && !isValidToken) {
+      dispatch(resetAuth());
+      disconnectSocket(store);
+      return;
+    }
+
+    if (isValidToken) {
       connectSocket(token, store);
-      dispatch(findUser(currId));
     } else {
-      disconnectSocket();
+      disconnectSocket(store);
     }
     return () => disconnectSocket(store);
-  }, [token]);
+  }, [dispatch, token, isValidToken]);
+
+  useEffect(() => {
+    if (!isValidToken || !currId) return;
+    dispatch(findUser(currId));
+  }, [dispatch, isValidToken, currId]);
 
   // useEffect(() => {
   //   if (currId && socket!= null) {

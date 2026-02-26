@@ -1,45 +1,32 @@
 import { SunIcon, MoonIcon } from "@phosphor-icons/react";
 import useColorMode from "../hooks/useColorMode";
 
-function DarkModeSwitcher() {
+function DarkModeSwitcher({ className = "" }) {
   const [colorMode, setColorMode] = useColorMode();
+  const isDark = colorMode === "dark";
 
   return (
-    <li className="list-none">
-      <label
-        htmlFor="dark-mode-toggle"
-        className={`
-          relative block h-[1.875rem] w-[3.5rem] rounded-full
-          ${colorMode === "dark" ? "bg-primary" : "bg-stroke"}
-          cursor-pointer
-        `}
+    <button
+      type="button"
+      onClick={() => setColorMode(isDark ? "light" : "dark")}
+      className={`relative inline-flex h-10 w-[4.6rem] items-center rounded-full border border-stroke bg-white/70 p-1 shadow-sm dark:border-strokedark dark:bg-boxdark-2 ${className}`}
+      aria-label="Toggle color mode"
+      title={isDark ? "Switch to light mode" : "Switch to dark mode"}
+    >
+      <span className={`absolute left-2 text-bodydark2 transition-opacity ${isDark ? "opacity-40" : "opacity-90 text-amber-500"}`}>
+        <SunIcon size={15} weight="fill" />
+      </span>
+      <span className={`absolute right-2 text-bodydark2 transition-opacity ${isDark ? "opacity-90 text-primary" : "opacity-40"}`}>
+        <MoonIcon size={15} weight="fill" />
+      </span>
+      <span
+        className={`relative z-10 flex h-8 w-8 items-center justify-center rounded-full bg-white text-black shadow-sm transition-transform dark:bg-slate-900 dark:text-white ${
+          isDark ? "translate-x-[1.45rem]" : "translate-x-0"
+        }`}
       >
-        <input
-          id="dark-mode-toggle"
-          type="checkbox"
-          checked={colorMode === "dark"}
-          onChange={() =>
-            setColorMode(colorMode === "dark" ? "light" : "dark")
-          }
-          className="absolute inset-0 z-50 m-0 h-full w-full cursor-pointer opacity-0"
-        />
-
-        <span
-          className={`
-            absolute top-1/2 left-0 flex h-6 w-6 -translate-y-1/2
-            items-center justify-center rounded-full bg-white
-            duration-75 ease-linear
-            ${
-              colorMode === "dark"
-                ? "translate-x-[1.75rem]"
-                : "translate-x-[0.25rem]"
-            }
-          `}
-        >
-          {colorMode === "dark" ? <MoonIcon /> : <SunIcon />}
-        </span>
-      </label>
-    </li>
+        {isDark ? <MoonIcon size={16} weight="fill" /> : <SunIcon size={16} weight="fill" />}
+      </span>
+    </button>
   );
 }
 

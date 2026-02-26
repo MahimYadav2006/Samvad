@@ -1,15 +1,20 @@
 import Logo from "../../components/Logo";
 import { Link, useNavigate } from "react-router-dom";
-import LoginImagePath from "../../images/auth/login.svg";
-import { EnvelopeSimpleIcon, LockIcon } from "@phosphor-icons/react";
+import {
+  EnvelopeSimpleIcon,
+  LockIcon,
+  ShieldCheckeredIcon,
+  SparkleIcon,
+  ChatCircleDotsIcon,
+} from "@phosphor-icons/react";
 import * as yup from "yup";
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
-import { useSelector } from "react-redux";
-import { useDispatch } from "react-redux";
-import { LoginUser } from "../../redux/slices/auth";
+import { useSelector, useDispatch } from "react-redux";
+import { toast } from "react-toastify";
+import { GoogleAuthUser, LoginUser } from "../../redux/slices/auth";
+import { requestGoogleAccessToken } from "../../utils/googleAuth";
 
-// Validation Schema
 const schema = yup.object().shape({
   email: yup
     .string()
@@ -21,15 +26,30 @@ const schema = yup.object().shape({
     .required("Password is required"),
 });
 
-let Login = () => {
+const highlights = [
+  {
+    icon: <ChatCircleDotsIcon size={18} weight="fill" />,
+    label: "Instant conversations with your people",
+  },
+  {
+    icon: <SparkleIcon size={18} weight="fill" />,
+    label: "Rich media sharing with a cleaner interface",
+  },
+  {
+    icon: <ShieldCheckeredIcon size={18} weight="fill" />,
+    label: "Secure login with email or Google",
+  },
+];
+
+export default function Login() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const isLoading = useSelector((state)=> state.auth.isLoading);
+  const isLoading = useSelector((state) => state.auth.isLoading);
 
   const {
     register,
     handleSubmit,
-    formState: { errors , isSubmitting},
+    formState: { errors, isSubmitting },
   } = useForm({
     resolver: yupResolver(schema),
     defaultValues: {
@@ -39,156 +59,193 @@ let Login = () => {
   });
 
   const onSubmit = (data) => {
-    console.log(data, "Form data: login");
-    dispatch(LoginUser(data,navigate));
+    dispatch(LoginUser(data, navigate));
+  };
+
+  const handleGoogleSignIn = async () => {
+    try {
+      const accessToken = await requestGoogleAccessToken();
+      await dispatch(GoogleAuthUser(accessToken, navigate));
+    } catch (error) {
+      toast.error(error?.message || "Google sign-in failed");
+    }
   };
 
   return (
-    <div className="border border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark h-screen">
-      <div className="flex h-full min-h-screen w-full">
-        <div className="block w-full md:w-1/2 xl:block xl:w-1/2">
-          <div className="py-17.5 px-26 text-center">
-            <Link to="/" className="mb-5.5 inline-block">
-              <Logo />
-            </Link>
-            <p className="2xl:px-20">
-              Hey there! Welcome Back. Login to chat with your friends.
-            </p>
-            <span className="mt-15 inline-block">
-              <img
-                src={LoginImagePath}
-                alt="login"
-                className="h-115 w-auto object-cover object-center"
-              />
-            </span>
-          </div>
-        </div>
-        <div className="border-stroke w-full dark:border-strokedark xl:w-1/2 xl:border-l xl:px-20">
-          <div className="w-full p-6 sm:p-12 xl:p-16">
-            <span className="mb-2 block font-medium text-black dark:text-white">
-              Start Connecting!
-            </span>
-            <h2 className="mb-8 text-2xl font-bold text-black dark:text-white sm:text-title-xl2">
-              Sign In to Samvad
-            </h2>
+    <div className="min-h-[100dvh] px-4 py-6 sm:px-8 sm:py-10">
+      <div className="mx-auto grid min-h-[calc(100dvh-3rem)] w-full max-w-7xl overflow-hidden rounded-3xl border border-stroke/70 bg-white/80 shadow-2xl shadow-primary/10 backdrop-blur dark:border-strokedark dark:bg-boxdark/80 lg:grid-cols-[1.08fr_1fr]">
+        <section className="relative hidden overflow-hidden px-12 py-12 lg:flex lg:flex-col lg:justify-between">
+          <div className="absolute -left-16 top-[-120px] h-72 w-72 rounded-full bg-primary/25 blur-3xl" />
+          <div className="absolute right-[-120px] bottom-[-100px] h-72 w-72 rounded-full bg-sky-400/30 blur-3xl" />
 
-            <form onSubmit={handleSubmit(onSubmit)} className="mb-8">
-              {/* Email */}
-              <div className="mb-4">
-                <label className="mb-2 block font-medium text-black dark:text-white">
+          <div className="relative z-10">
+            <Logo />
+          </div>
+
+          <div className="relative z-10 space-y-8">
+            <div>
+              <p className="mb-3 inline-flex items-center rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-xs font-bold uppercase tracking-[0.2em] text-primary">
+                Welcome Back
+              </p>
+              <h1 className="font-display text-4xl font-bold leading-tight text-black dark:text-white">
+                Continue the conversation
+                <br />
+                on Samvad
+              </h1>
+              <p className="mt-4 max-w-lg text-sm text-body dark:text-bodydark">
+                Your messages, calls, media and presence, now in a cleaner and
+                faster experience built for both desktop and mobile.
+              </p>
+            </div>
+
+            <div className="space-y-3">
+              {highlights.map((item) => (
+                <div
+                  key={item.label}
+                  className="flex items-center gap-3 rounded-2xl border border-stroke/70 bg-white/70 px-4 py-3 text-sm dark:border-strokedark dark:bg-boxdark-2/70"
+                >
+                  <span className="rounded-lg bg-primary/15 p-1.5 text-primary">
+                    {item.icon}
+                  </span>
+                  <span className="font-semibold text-black dark:text-white">
+                    {item.label}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section className="flex items-center justify-center p-5 sm:p-8 lg:p-12">
+          <div className="w-full max-w-md rounded-3xl border border-stroke/70 bg-white p-6 shadow-xl dark:border-strokedark dark:bg-boxdark-2 sm:p-8">
+            <div className="mb-7">
+              <div className="mb-5 lg:hidden">
+                <Logo />
+              </div>
+              <p className="text-xs font-bold uppercase tracking-[0.2em] text-primary">
+                Start Connecting
+              </p>
+              <h2 className="mt-2 font-display text-3xl font-bold text-black dark:text-white">
+                Sign In
+              </h2>
+              <p className="mt-2 text-sm text-body dark:text-bodydark">
+                Login to chat with your friends and continue where you left off.
+              </p>
+            </div>
+
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+              <div>
+                <label className="mb-2 block text-sm font-semibold text-black dark:text-white">
                   Email
                 </label>
                 <div className="relative">
                   <input
                     type="email"
                     {...register("email")}
-                    placeholder="Enter your email"
-                    className={`w-full rounded-lg border bg-transparent py-3 pl-6 pr-10 text-black outline-none  focus-visible:shadow-none  dark:bg-form-input dark:text-white  ${
+                    placeholder="you@example.com"
+                    className={`w-full rounded-xl border bg-transparent py-3.5 pl-4 pr-11 text-black dark:text-white ${
                       errors.email
-                        ? "border-red-500 focus:border-red"
-                        : "border-stroke dark:border-form-strokedark focus:border-primary dark:focus:border-primary"
+                        ? "border-red focus:border-red"
+                        : "border-stroke focus:border-primary dark:border-form-strokedark dark:focus:border-primary"
                     }`}
                   />
-                  <span className="absolute right-4 top-1/2 -translate-y-1/2">
-                    <EnvelopeSimpleIcon size={24} />
+                  <span className="absolute right-4 top-1/2 -translate-y-1/2 text-bodydark2">
+                    <EnvelopeSimpleIcon size={20} />
                   </span>
                 </div>
                 {errors.email && (
-                  <p className="text-red text-sm">{errors.email.message}</p>
+                  <p className="mt-1.5 text-xs font-semibold text-red">
+                    {errors.email.message}
+                  </p>
                 )}
               </div>
 
-              {/*  Password */}
-              <div className="mb-6">
-                <label className="mb-2 block font-medium text-black dark:text-white">
+              <div>
+                <label className="mb-2 block text-sm font-semibold text-black dark:text-white">
                   Password
                 </label>
                 <div className="relative">
                   <input
                     type="password"
                     {...register("password")}
-                    placeholder="6+ Characters and atleast 1 Capital Letter"
-                    className={`w-full rounded-lg border  bg-transparent py-3 pl-6 pr-10 text-black outline-none focus-visible:shadow-none dark:bg-form-input dark:text-white  ${
+                    placeholder="Enter your password"
+                    className={`w-full rounded-xl border bg-transparent py-3.5 pl-4 pr-11 text-black dark:text-white ${
                       errors.password
-                        ? "border-red-500 focus:border-red"
-                        : "border-stroke dark:border-form-strokedark focus:border-primary dark:focus:border-primary"
+                        ? "border-red focus:border-red"
+                        : "border-stroke focus:border-primary dark:border-form-strokedark dark:focus:border-primary"
                     }`}
                   />
-                  <span className="absolute right-4 top-1/2 -translate-y-1/2">
-                    <LockIcon size={24} />
+                  <span className="absolute right-4 top-1/2 -translate-y-1/2 text-bodydark2">
+                    <LockIcon size={20} />
                   </span>
                 </div>
                 {errors.password && (
-                  <p className="text-red text-sm">{errors.password.message}</p>
+                  <p className="mt-1.5 text-xs font-semibold text-red">
+                    {errors.password.message}
+                  </p>
                 )}
               </div>
-              
-              {/* Submit Button */}
-              <div className="mb-5">
-                <button
-                  type="submit"
-                  // onClick={() => navigate("/dashboard")}
-                  disabled={isSubmitting || isLoading}
-                  // value="Sign In"
-                  className="w-full cursor-pointer border border-primary bg-primary p-4 rounded-lg text-white transition hover:bg-opacity-90"
-                >
-                  {isSubmitting || isLoading ? 'Submitting your data' : "Sign In" }
-                </button>
-              </div>
 
-              <button className="flex w-full items-center justify-center gap-3.5 border border-stroke bg-gray p-4 rounded-lg hover:bg-opacity-50 dark:border-strokedark dark:bg-meta-4 dark:hover:bg-opacity-50 transition">
-                <span className="flex items-center gap-2">
-                  <svg
-                    width="20"
-                    height="20"
-                    viewBox="0 0 20 20"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <g clipPath="url(#clip0_191_13499)">
-                      <path
-                        d="M19.999 10.2217C20.0111 9.53428 19.9387 8.84788 19.7834 8.17737H10.2031V11.8884H15.8266C15.7201 12.5391 15.4804 13.162 15.1219 13.7195C14.7634 14.2771 14.2935 14.7578 13.7405 15.1328L13.7209 15.2571L16.7502 17.5568L16.96 17.5774C18.8873 15.8329 19.9986 13.2661 19.9986 10.2217"
-                        fill="#4285F4"
-                      />
-                      <path
-                        d="M10.2055 19.9999C12.9605 19.9999 15.2734 19.111 16.9629 17.5777L13.7429 15.1331C12.8813 15.7221 11.7248 16.1333 10.2055 16.1333C8.91513 16.1259 7.65991 15.7205 6.61791 14.9745C5.57592 14.2286 4.80007 13.1801 4.40044 11.9777L4.28085 11.9877L1.13101 14.3765L1.08984 14.4887C1.93817 16.1456 3.24007 17.5386 4.84997 18.5118C6.45987 19.4851 8.31429 20.0004 10.2059 19.9999"
-                        fill="#34A853"
-                      />
-                      <path
-                        d="M4.39899 11.9777C4.1758 11.3411 4.06063 10.673 4.05807 9.99996C4.06218 9.32799 4.1731 8.66075 4.38684 8.02225L4.38115 7.88968L1.19269 5.4624L1.0884 5.51101C0.372763 6.90343 0 8.4408 0 9.99987C0 11.5589 0.372763 13.0963 1.0884 14.4887L4.39899 11.9777Z"
-                        fill="#FBBC05"
-                      />
-                      <path
-                        d="M10.2059 3.86663C11.668 3.84438 13.0822 4.37803 14.1515 5.35558L17.0313 2.59996C15.1843 0.901848 12.7383 -0.0298855 10.2059 -3.6784e-05C8.31431 -0.000477834 6.4599 0.514732 4.85001 1.48798C3.24011 2.46124 1.9382 3.85416 1.08984 5.51101L4.38946 8.02225C4.79303 6.82005 5.57145 5.77231 6.61498 5.02675C7.65851 4.28118 8.9145 3.87541 10.2059 3.86663Z"
-                        fill="#EB4335"
-                      />
-                    </g>
-                    <defs>
-                      <clipPath id="clip0_191_13499">
-                        <rect width="20" height="20" fill="white" />
-                      </clipPath>
-                    </defs>
-                  </svg>
-                  <span>Sign In With Google</span>
+              <button
+                type="submit"
+                disabled={isSubmitting || isLoading}
+                className="w-full rounded-xl bg-primary px-4 py-3.5 text-sm font-bold text-white shadow-lg shadow-primary/25 hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-70"
+              >
+                {isSubmitting || isLoading ? "Signing in..." : "Sign In"}
+              </button>
+
+              <button
+                type="button"
+                onClick={handleGoogleSignIn}
+                disabled={isSubmitting || isLoading}
+                className="flex w-full items-center justify-center gap-3 rounded-xl border border-stroke bg-gray-2 px-4 py-3.5 text-sm font-semibold text-black hover:border-primary/50 hover:bg-primary/5 dark:border-strokedark dark:bg-meta-4 dark:text-white disabled:cursor-not-allowed disabled:opacity-70"
+              >
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 20 20"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <g clipPath="url(#clip0_191_13499)">
+                    <path
+                      d="M19.999 10.2217C20.0111 9.53428 19.9387 8.84788 19.7834 8.17737H10.2031V11.8884H15.8266C15.7201 12.5391 15.4804 13.162 15.1219 13.7195C14.7634 14.2771 14.2935 14.7578 13.7405 15.1328L13.7209 15.2571L16.7502 17.5568L16.96 17.5774C18.8873 15.8329 19.9986 13.2661 19.9986 10.2217"
+                      fill="#4285F4"
+                    />
+                    <path
+                      d="M10.2055 19.9999C12.9605 19.9999 15.2734 19.111 16.9629 17.5777L13.7429 15.1331C12.8813 15.7221 11.7248 16.1333 10.2055 16.1333C8.91513 16.1259 7.65991 15.7205 6.61791 14.9745C5.57592 14.2286 4.80007 13.1801 4.40044 11.9777L4.28085 11.9877L1.13101 14.3765L1.08984 14.4887C1.93817 16.1456 3.24007 17.5386 4.84997 18.5118C6.45987 19.4851 8.31429 20.0004 10.2059 19.9999"
+                      fill="#34A853"
+                    />
+                    <path
+                      d="M4.39899 11.9777C4.1758 11.3411 4.06063 10.673 4.05807 9.99996C4.06218 9.32799 4.1731 8.66075 4.38684 8.02225L4.38115 7.88968L1.19269 5.4624L1.0884 5.51101C0.372763 6.90343 0 8.4408 0 9.99987C0 11.5589 0.372763 13.0963 1.0884 14.4887L4.39899 11.9777Z"
+                      fill="#FBBC05"
+                    />
+                    <path
+                      d="M10.2059 3.86663C11.668 3.84438 13.0822 4.37803 14.1515 5.35558L17.0313 2.59996C15.1843 0.901848 12.7383 -0.0298855 10.2059 -3.6784e-05C8.31431 -0.000477834 6.4599 0.514732 4.85001 1.48798C3.24011 2.46124 1.9382 3.85416 1.08984 5.51101L4.38946 8.02225C4.79303 6.82005 5.57145 5.77231 6.61498 5.02675C7.65851 4.28118 8.9145 3.87541 10.2059 3.86663Z"
+                      fill="#EB4335"
+                    />
+                  </g>
+                  <defs>
+                    <clipPath id="clip0_191_13499">
+                      <rect width="20" height="20" fill="white" />
+                    </clipPath>
+                  </defs>
+                </svg>
+                <span>
+                  {isSubmitting || isLoading ? "Please wait..." : "Sign In with Google"}
                 </span>
               </button>
 
-              <div className="mt-6 text-center">
-                <p>
-                  Don't have any account?{" "}
-                  <Link
-                    to="/auth/signup"
-                    className="text-primary hover:underline"
-                  >
-                    Sign up
-                  </Link>
-                </p>
-              </div>
+              <p className="pt-1 text-center text-sm text-body dark:text-bodydark">
+                Don&apos;t have an account?{" "}
+                <Link to="/auth/signup" className="font-semibold text-primary hover:underline">
+                  Sign up
+                </Link>
+              </p>
             </form>
           </div>
-        </div>
+        </section>
       </div>
     </div>
   );
-};
-export default Login;
+}

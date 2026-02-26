@@ -2,7 +2,7 @@ import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from '../../utils/axios';
 import {toast} from "react-toastify";
 import { getSocket } from '../../utils/socket';
-import { fetchMessages } from './user';
+import { isJwtToken } from '../../utils/authToken';
 
 const initialState = {
     userList: [],
@@ -31,16 +31,27 @@ export default slice.reducer;
 export const { reset } = slice.actions;
 const {setLoading,setError,updateUserList} = slice.actions;
 
+const getAuthToken = (getState) => {
+    const token = getState().auth.token;
+    return isJwtToken(token) ? token : null;
+};
+
 // Fetching User List
 export function fetchUserList(){
     return async (dispatch,getState)=>{
         // Check if prev state is disturbed
         dispatch(setError(null));
         dispatch(setLoading(true));
+        const token = getAuthToken(getState);
+        if (!token) {
+            dispatch(setError({ message: "Invalid auth token" }));
+            dispatch(setLoading(false));
+            return;
+        }
         // Make API Call
         await axios.get("/user/users", {
         headers: {
-          authorization: `bearer ${getState().auth.token}`,
+          authorization: `bearer ${token}`,
         },
       }).then(function (response){
             dispatch(updateUserList(response.data.data.users));
@@ -100,7 +111,10 @@ export const uploadDocument = createAsyncThunk(
         const formData = new FormData();
         formData.append("document", file);
   
-        const token = getState().auth.token;
+        const token = getAuthToken(getState);
+        if (!token) {
+          return rejectWithValue({ message: "Invalid auth token" });
+        }
   
         const res = await axios.post("/chat/upload-doc", formData, {
           headers: {
@@ -124,6 +138,12 @@ export function uploadAudioMessage(file) {
     return async (dispatch, getState) => {
         dispatch(setError(null));
         dispatch(setLoading(true));
+        const token = getAuthToken(getState);
+        if (!token) {
+            dispatch(setError({ message: "Invalid auth token" }));
+            dispatch(setLoading(false));
+            return null;
+        }
 
         try {
             const formData = new FormData();
@@ -132,7 +152,7 @@ export function uploadAudioMessage(file) {
             const response = await axios.post("/chat/upload-audio", formData, {
                 headers: {
                     "Content-Type": "multipart/form-data",
-                    authorization: `bearer ${getState().auth.token}`,
+                    authorization: `bearer ${token}`,
                 },
             });
 
@@ -157,6 +177,12 @@ export function uploadMedia(file) {
     return async (dispatch, getState) => {
       dispatch(setError(null));
       dispatch(setLoading(true));
+      const token = getAuthToken(getState);
+      if (!token) {
+        dispatch(setError({ message: "Invalid auth token" }));
+        dispatch(setLoading(false));
+        return null;
+      }
   
       try {
         const formData = new FormData();
@@ -165,7 +191,7 @@ export function uploadMedia(file) {
         const response = await axios.post("/chat/upload-media", formData, {
           headers: {
             "Content-Type": "multipart/form-data",
-            authorization: `bearer ${getState().auth.token}`,
+            authorization: `bearer ${token}`,
           },
         });
   
@@ -188,8 +214,6 @@ export function uploadMedia(file) {
 
 
   
-
-
 
 
 

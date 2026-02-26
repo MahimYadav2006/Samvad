@@ -3,6 +3,7 @@ const catchAsync = require('../utilities/catchAsync');
 const optGenerator = require('otp-generator');
 const jwt = require("jsonwebtoken");
 const { promisify } = require('util');
+const crypto = require("crypto");
 
 
 
@@ -13,6 +14,33 @@ const Mailer = require("../services/mailer");
 
 // Functions
 const signToken = (userId) => jwt.sign({userId},process.env.TOKEN_KEY);
+const GOOGLE_TOKEN_INFO_URL = "https://oauth2.googleapis.com/tokeninfo";
+const GOOGLE_USER_INFO_URL = "https://www.googleapis.com/oauth2/v3/userinfo";
+const JWT_TOKEN_REGEX = /^[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+$/;
+
+const fetchGoogleTokenInfo = async (accessToken) => {
+    try {
+        const tokenInfoResponse = await fetch(`${GOOGLE_TOKEN_INFO_URL}?access_token=${encodeURIComponent(accessToken)}`);
+        if (!tokenInfoResponse.ok) return null;
+        return tokenInfoResponse.json();
+    } catch (error) {
+        return null;
+    }
+};
+
+const fetchGoogleUserInfo = async (accessToken) => {
+    try {
+        const userInfoResponse = await fetch(GOOGLE_USER_INFO_URL, {
+            headers: {
+                Authorization: `Bearer ${accessToken}`,
+            },
+        });
+        if (!userInfoResponse.ok) return null;
+        return userInfoResponse.json();
+    } catch (error) {
+        return null;
+    }
+};
 
 
 // Register New User
@@ -184,61 +212,166 @@ exports.login = catchAsync(async (req,res,next)=>{
     })
 });
 
-// Protect
-exports.protect = catchAsync(async (req,res,next)=>{
-    try{
-        // Try to get token
-        let token;
-        if(req.headers.authorization && req.headers.authorization.startsWith('bearer')){
-            token = req.headers.authorization.split(" ")[1];
-        }
-        else if(req.cookies.jwt){
-            token = req.cookies.jwt;
-        }
+// Google Login / Signup
+exports.googleAuth = catchAsync(async (req, res, next) => {
+    const { accessToken } = req.body;
 
-        // Check if token exist
-        if(!token){
-            return res.status(401).json({ // 401 -> Authorization Error Code
-                status: "error",
-                message : "You are not logged in. Please Login to continue.",
-            });
-        }
-
-        // Step 2-> Verify the token
-        const decoded = await promisify(jwt.verify)(token,process.env.TOKEN_KEY);
-
-        // console.log("Message from protect of authcontroller: Value of decoded is ",decoded);
-
-        // Step 3-> Check if User Still Exist
-        const this_user = await User.findById(decoded.userId);
-        if(!this_user){
-            return res.status(401).json({
-                message: "The user belonging to this token no longer exists",
-            });
-        }
-
-        // Step 4-> check if user changed password aftr the token was issued
-        if(await this_user.changedPasswordAfter(decoded.iat)){
-            return res.status(401).json({
-                status: "error",
-                message: "Password was changed recently. Please Login Again",
-            });
-        }
-
-        // Final Step-> Give access to the protected routes
-        req.user = this_user;
-        next();
-
-    }catch(error){
-        console.log(error);
-        console.log("Protect End Point Reached");
+    if (!accessToken) {
         return res.status(400).json({
             status: "error",
-            message : "Authentication failed",
-        })
+            message: "Google access token is required",
+        });
     }
+
+    const googleClientId = process.env.GOOGLE_CLIENT_ID;
+    if (!googleClientId) {
+        return res.status(500).json({
+            status: "error",
+            message: "Google auth is not configured on the server",
+        });
+    }
+
+    const tokenInfo = await fetchGoogleTokenInfo(accessToken);
+    if (!tokenInfo) {
+        return res.status(401).json({
+            status: "error",
+            message: "Invalid Google access token",
+        });
+    }
+
+    if (tokenInfo.aud !== googleClientId) {
+        return res.status(401).json({
+            status: "error",
+            message: "Google token audience mismatch",
+        });
+    }
+
+    const googleUser = await fetchGoogleUserInfo(accessToken);
+    if (!googleUser) {
+        return res.status(401).json({
+            status: "error",
+            message: "Failed to fetch Google account details",
+        });
+    }
+
+    const {
+        email,
+        email_verified: emailVerified,
+        name,
+        picture,
+    } = googleUser;
+
+    if (!email || (emailVerified !== true && emailVerified !== "true")) {
+        return res.status(400).json({
+            status: "error",
+            message: "Google account email is not verified",
+        });
+    }
+
+    const normalizedEmail = email.toLowerCase();
+    let user = await User.findOne({ email: normalizedEmail });
+    let isNewUser = false;
+
+    if (!user) {
+        isNewUser = true;
+        const generatedPassword = `google-${crypto.randomUUID()}-${Date.now()}`;
+        user = await User.create({
+            name: name || normalizedEmail.split("@")[0],
+            email: normalizedEmail,
+            password: generatedPassword,
+            verified: true,
+            avatar: picture || undefined,
+        });
+    } else {
+        let shouldSave = false;
+
+        if (!user.verified) {
+            user.verified = true;
+            user.otp = undefined;
+            user.otp_expiry_time = undefined;
+            shouldSave = true;
+        }
+
+        if (!user.name && name) {
+            user.name = name;
+            shouldSave = true;
+        }
+
+        if (!user.avatar && picture) {
+            user.avatar = picture;
+            shouldSave = true;
+        }
+
+        if (shouldSave) {
+            await user.save({ validateModifiedOnly: true });
+        }
+    }
+
+    const token = signToken(user._id);
+
+    return res.status(200).json({
+        status: "success",
+        message: isNewUser ? "Signed up with Google successfully" : "Logged in with Google successfully",
+        token,
+        user_id: user._id,
+    });
 });
 
+// Protect
+exports.protect = catchAsync(async (req,res,next)=>{
+    // Try to get token
+    const authHeader = req.headers.authorization || req.headers.Authorization;
+    let token = null;
 
+    if (typeof authHeader === "string" && /^bearer\s+/i.test(authHeader)) {
+        token = authHeader.replace(/^bearer\s+/i, "").trim();
+    } else if (req.cookies && typeof req.cookies.jwt === "string") {
+        token = req.cookies.jwt.trim();
+    }
 
+    if (!token || token.toLowerCase() === "undefined" || token.toLowerCase() === "null") {
+        return res.status(401).json({
+            status: "error",
+            message : "You are not logged in. Please Login to continue.",
+        });
+    }
+
+    if (!JWT_TOKEN_REGEX.test(token)) {
+        return res.status(401).json({
+            status: "error",
+            message: "Invalid authentication token format",
+        });
+    }
+
+    let decoded;
+    try {
+        decoded = await promisify(jwt.verify)(token,process.env.TOKEN_KEY);
+    } catch (error) {
+        return res.status(401).json({
+            status: "error",
+            message: "Authentication failed",
+        });
+    }
+
+    // Step 3-> Check if User Still Exist
+    const this_user = await User.findById(decoded.userId);
+    if(!this_user){
+        return res.status(401).json({
+            status: "error",
+            message: "The user belonging to this token no longer exists",
+        });
+    }
+
+    // Step 4-> check if user changed password aftr the token was issued
+    if(await this_user.changedPasswordAfter(decoded.iat)){
+        return res.status(401).json({
+            status: "error",
+            message: "Password was changed recently. Please Login Again",
+        });
+    }
+
+    // Final Step-> Give access to the protected routes
+    req.user = this_user;
+    next();
+});
 

@@ -1,7 +1,8 @@
 import axios from 'axios';
+import { isJwtToken } from './authToken';
 
 // Configuring Base URL
-const BASE_URL = "https://samvad-backend-latest.onrender.com";
+const BASE_URL = "http://localhost:8000";
 
 
 // const BASE_URL = "https://707e82ada361.ngrok-free.app";
@@ -10,12 +11,24 @@ const axiosInstance = axios.create({
 });
 
 axiosInstance.interceptors.request.use(
-    (response) => response,
-    (error) =>{
-        Promise.reject((error.response && error.response.data) || "Something Went Wrong");
-    }
+    (config) => {
+        const authHeader = config?.headers?.authorization || config?.headers?.Authorization;
+
+        if (typeof authHeader === "string") {
+            const tokenFromHeader = authHeader.replace(/^bearer\s+/i, "").trim();
+
+            if (isJwtToken(tokenFromHeader)) {
+                config.headers.authorization = `bearer ${tokenFromHeader}`;
+            } else {
+                delete config.headers.authorization;
+                delete config.headers.Authorization;
+            }
+        }
+
+        return config;
+    },
+    (error) => Promise.reject((error.response && error.response.data) || "Something Went Wrong")
 )
 
 export default axiosInstance;
-
 

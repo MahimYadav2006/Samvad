@@ -1,8 +1,8 @@
-import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import { createSlice } from '@reduxjs/toolkit';
 import axios from '../../utils/axios';
 import {toast} from "react-toastify";
+import { isJwtToken } from "../../utils/authToken";
 // import { dispatch } from '../store';
-import { connectSocket, disconnectSocket } from "../../utils/socket";
 
 
 const initialState = {
@@ -24,11 +24,18 @@ const slice = createSlice({
             state.isLoading = action.payload;
         },
         loginSuccess(state,action){
-            state.token = action.payload;
-            state.isLoggedIn = true;
+            state.token = isJwtToken(action.payload) ? action.payload : null;
+            state.isLoggedIn = Boolean(state.token);
         },
-        logOutSuccess(state,action){
+        setAuthSession(state, action) {
+            const { token, userId } = action.payload || {};
+            state.token = isJwtToken(token) ? token : null;
+            state.user = userId ? { _id: userId } : {};
+            state.isLoggedIn = Boolean(state.token);
+        },
+        logOutSuccess(state){
             state.token = null;
+            state.user = {};
             state.isLoggedIn = false;
         },
         addUserId(state,action){
@@ -40,7 +47,7 @@ const slice = createSlice({
 
 export default slice.reducer;
 export const { reset } = slice.actions;
-const {setLoading,setError,loginSuccess,logOutSuccess,addUserId} = slice.actions;
+const {setLoading,setError,setAuthSession,logOutSuccess} = slice.actions;
 
 // Registering new User
 export function RegisterUser(formData,navigate){
@@ -74,7 +81,7 @@ export function RegisterUser(formData,navigate){
 
 // // Resend OTP
 export function ResendOTP(email){
-    return async(dispatch,getState) => {
+    return async(dispatch) => {
         dispatch(setError(null));
         dispatch(setLoading(true));
 
@@ -112,8 +119,7 @@ export function VerifyOTP(formValues,navigate){ // cuz if it is verified then we
 
             const {token,message,user_id} = response.data;
 
-            dispatch(loginSuccess(token));
-            dispatch(addUserId({ _id: user_id }));
+            dispatch(setAuthSession({ token, userId: user_id }));
             toast.success(message || "Email Verified Successfully");
         }).catch((error)=>{
             console.log("Inside auth slice",error);
@@ -144,8 +150,7 @@ export function LoginUser(formValues,navigate){ // cuz if it is verified then we
 
             const {token,message,user_id} = response.data;
 
-            dispatch(loginSuccess(token));
-            dispatch(addUserId({ _id: user_id }));
+            dispatch(setAuthSession({ token, userId: user_id }));
             toast.success(message || "Logged In Successfully");
         }).catch((error)=>{
             console.log("Inside auth slice",error);
@@ -160,10 +165,40 @@ export function LoginUser(formValues,navigate){ // cuz if it is verified then we
     }
 }
 
+// Login / Signup with Google
+export function GoogleAuthUser(accessToken, navigate) {
+    return async (dispatch, getState) => {
+        dispatch(setError(null));
+        dispatch(setLoading(true));
+
+        await axios.post("/auth/google", { accessToken }, {
+            headers: {
+                "Content-Type": "application/json",
+            },
+        }).then((response) => {
+            console.log("Inside Google auth slice", response.data);
+
+            const { token, message, user_id } = response.data;
+
+            dispatch(setAuthSession({ token, userId: user_id }));
+            toast.success(message || "Google authentication successful");
+        }).catch((error) => {
+            console.log("Inside Google auth slice", error);
+            dispatch(setError(error));
+            toast.error(error?.response?.data?.message || error?.message || "Something Went Wrong");
+        }).finally(() => {
+            dispatch(setLoading(false));
+            if (!getState().auth.error) {
+                navigate("/dashboard");
+            }
+        });
+    };
+}
+
 // Sign Out
 export function LogoutUser(navigate){
     console.log("HI I entered the logout function");
-    return async(dispatch,getState) => {
+    return async(dispatch) => {
         try{
             dispatch(logOutSuccess());
             navigate("/");

@@ -1,42 +1,42 @@
-import React, { useState } from 'react'
-import { CaretDownIcon, GlobeIcon } from '@phosphor-icons/react'
+import { CaretDownIcon, GlobeIcon } from "@phosphor-icons/react";
 
-export default function SelectInput({register,errors}) {
-    const [selectedOption,setSelectedOption] = useState('');
-    const [isOptionSelected,setIsOptionSelected] = useState(false);
-
-    const changeTextColor = () => {
-        setIsOptionSelected(true);
-    }
+export default function SelectInput({ register, errors }) {
   return (
     <div>
-      <label htmlFor="" className='mb-3 block text-black dark:text-white'>Select Country</label>
-      <div className='relative z-20 bg-white dark:bg-form-input'>
-
-        <span className='absolute top-1/2 left-4 -translate-y-1/2'>
-            <GlobeIcon size={20}></GlobeIcon>
+      <label className="mb-2 block text-sm font-semibold text-black dark:text-white">
+        Country
+      </label>
+      <div className="relative">
+        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-bodydark2">
+          <GlobeIcon size={18} />
         </span>
 
         <select
-            // value={selectedOption}
-            // onChange={(e) => {
-            //     setSelectedOption(e.target.value);
-            //     changeTextColor();
-            // }}
-            defaultValue={""}
-            {...register("country")}
-            className={ `relative z-20 w-full appearance-none rounded border bg-transparent px-12 py-3 outline-none transition dark:bg-form-input ${isOptionSelected ? "text-black dark:text-white" : ""}  ${errors.country ? "border-red-500 focus:border-red": "border-stroke dark:border-form-strokedark focus:border-primary dark:focus:border-primary"}`}
+          defaultValue=""
+          {...register("country")}
+          className={`w-full appearance-none rounded-xl border bg-transparent py-3 pl-10 pr-10 text-black dark:text-white ${
+            errors.country
+              ? "border-red focus:border-red"
+              : "border-stroke focus:border-primary dark:border-form-strokedark dark:focus:border-primary"
+          }`}
         >
-            <option disabled className='text-body dark:text-bodydark' value="">Select Country</option>
-            <option className='text-body dark:text-bodydark' value="India">India</option>
-            <option className='text-body dark:text-bodydark' value="USA">USA</option>
-            <option className='text-body dark:text-bodydark' value="UK">UK</option>
+          <option disabled value="">
+            Select Country
+          </option>
+          <option value="India">India</option>
+          <option value="USA">USA</option>
+          <option value="UK">UK</option>
         </select>
 
-        <span className='absolute top-1/2 right-4 z-10 -translate-y-1/2'>
-            <CaretDownIcon size={20}></CaretDownIcon>
+        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-bodydark2">
+          <CaretDownIcon size={18} />
         </span>
       </div>
+      {errors.country && (
+        <p className="mt-1.5 text-xs font-semibold text-red">
+          {errors.country.message}
+        </p>
+      )}
     </div>
-  )
+  );
 }

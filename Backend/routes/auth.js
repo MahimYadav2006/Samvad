@@ -6,6 +6,7 @@ router.post("/signup",authController.register, authController.sendOTP);
 router.post("/resend-otp",authController.resendOTP);
 router.post("/verify",authController.verifyOTP);
 router.post("/login",authController.login);
+router.post("/google", authController.googleAuth);
 
 
 module.exports = router;

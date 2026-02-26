@@ -35,12 +35,12 @@ function EmojiPicker({onEmojiSelect}) {
 
     return (
         <div className='relative flex'>
-            <button ref={buttonRef} className='text-[#98A6AD]' onClick={handleTrigger}>
+            <button type="button" ref={buttonRef} className='text-bodydark2 hover:text-primary' onClick={handleTrigger}>
                 <SmileyIcon size={24} />
             </button>
 
             {pickerOpen && (
-                <div ref={pickerRef}  className='absolute z-40 bottom-10 right-0'>
+                <div ref={pickerRef}  className='absolute z-40 bottom-10 right-0 max-w-[92vw] overflow-auto rounded-xl'>
                     <Picker theme={colorMode} data={data} onEmojiSelect={onEmojiSelect} />
                 </div>
             )}

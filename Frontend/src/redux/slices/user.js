@@ -1,7 +1,8 @@
-import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import { createSlice } from '@reduxjs/toolkit';
 import axios from '../../utils/axios';
 import {toast} from "react-toastify";
 import { getSocket } from '../../utils/socket';
+import { isJwtToken } from '../../utils/authToken';
 
 const initialState = {
     isLoading: false,
@@ -53,18 +54,31 @@ export const { reset } = slice.actions;
 const {setLoading,setError,setUser,setCurrentConversation,setCurrMessages,setOppositeUser,setSocket} = slice.actions;
 export {setSocket};
 
+const getAuthToken = (getState) => {
+    const token = getState().auth.token;
+    return isJwtToken(token) ? token : null;
+};
+
 export function findUser(currId) {
     return async (dispatch, getState) => {
         dispatch(setError(null));
         dispatch(setLoading(true));
-        if(currId === null || currId === undefined) return;
+        if(currId === null || currId === undefined){
+            dispatch(setLoading(false));
+            return;
+        }
+        const token = getAuthToken(getState);
+        if (!token) {
+            dispatch(setError({ message: "Invalid auth token" }));
+            dispatch(setLoading(false));
+            return;
+        }
         try {
             const res = await axios.get(`/user/someone?userId=${currId}`, {
                 headers: {
-                    authorization: `bearer ${getState().auth.token}`,
+                    authorization: `bearer ${token}`,
                 },
             });
-            const { message, data } = res.data;
             // console.log("Inside findOppositeUser Function".data.user);
             dispatch(setUser(res.data.data.user));
             // toast.success(message || 'User found successfully');
@@ -83,13 +97,19 @@ export function updateUserDetails(formData) {
     return async (dispatch,getState) =>{
         dispatch(setError(null));
         dispatch(setLoading(true));
+        const token = getAuthToken(getState);
+        if (!token) {
+            dispatch(setError({ message: "Invalid auth token" }));
+            dispatch(setLoading(false));
+            return;
+        }
         const reqBody = {...formData};
 
         // API CALL
         await axios.patch("/user/me",reqBody,{
             headers:{
                 "Content-Type": "application/json",
-                "authorization": `bearer ${getState().auth.token}`,
+                "authorization": `bearer ${token}`,
             },
         }).then((response)=>{
             console.log("Inside user slice" , response.data);
@@ -110,12 +130,18 @@ export function updateAvatar(formData) {
   return async (dispatch, getState) => {
     dispatch(setError(null));
     dispatch(setLoading(true));
+    const token = getAuthToken(getState);
+    if (!token) {
+      dispatch(setError({ message: "Invalid auth token" }));
+      dispatch(setLoading(false));
+      return;
+    }
 
     try {
       const response = await axios.patch("/user/update-avatar", formData, {
         headers: {
           "Content-Type": "multipart/form-data",
-          authorization: `bearer ${getState().auth.token}`,
+          authorization: `bearer ${token}`,
         },
       });
 
@@ -141,13 +167,19 @@ export function updatePassword(formData){
     return async (dispatch,getState) =>{
         dispatch(setError(null));
         dispatch(setLoading(true));
+        const token = getAuthToken(getState);
+        if (!token) {
+            dispatch(setError({ message: "Invalid auth token" }));
+            dispatch(setLoading(false));
+            return;
+        }
         const reqBody = {...formData};
 
         // API CALL
         await axios.patch("/user/update-password",reqBody,{
             headers:{
                 "Content-Type": "application/json",
-                "authorization": `bearer ${getState().auth.token}`,
+                "authorization": `bearer ${token}`,
             },
         }).then((response)=>{
             console.log("Inside user slice" , response.data);
@@ -169,14 +201,22 @@ export function findOppositeUser(oppId) {
     return async (dispatch, getState) => {
         dispatch(setError(null));
         dispatch(setLoading(true));
-        if(oppId === null || oppId === undefined) return;
+        if(oppId === null || oppId === undefined){
+            dispatch(setLoading(false));
+            return;
+        }
+        const token = getAuthToken(getState);
+        if (!token) {
+            dispatch(setError({ message: "Invalid auth token" }));
+            dispatch(setLoading(false));
+            return;
+        }
         try {
             const res = await axios.get(`/user/someone?userId=${oppId}`, {
                 headers: {
-                    authorization: `bearer ${getState().auth.token}`,
+                    authorization: `bearer ${token}`,
                 },
             });
-            const { message, data } = res.data;
             // console.log("Inside findOppositeUser Function".data.user);
             dispatch(setOppositeUser(res.data.data.user));
             // toast.success(message || 'User found successfully');
@@ -193,7 +233,7 @@ export function findOppositeUser(oppId) {
 
 export function fetchMessages(convId) {
     console.log("Entered Fetch Messages with id", convId);
-    return async (dispatch, getState) => {
+    return async (dispatch) => {
         dispatch(setError(null));
         dispatch(setLoading(true));
         const newData = {
@@ -226,11 +266,22 @@ export function startConversation(data) {
     return async (dispatch, getState) => {
         dispatch(setError(null));
         dispatch(setLoading(true));
+        const token = getAuthToken(getState);
+        if (!token) {
+            dispatch(setError({ message: "Invalid auth token" }));
+            dispatch(setLoading(false));
+            return;
+        }
+        if (!data?.userId) {
+            dispatch(setError({ message: "User Id is required to start conversation" }));
+            dispatch(setLoading(false));
+            return;
+        }
 
         try {
             const res = await axios.post('/user/start-conversation', { userId: data.userId }, {
                 headers: {
-                    authorization: `bearer ${getState().auth.token}`,
+                    authorization: `bearer ${token}`,
                 },
             });
             const { data: responseData } = res.data;
@@ -251,7 +302,5 @@ export function startConversation(data) {
         }
     };
 }
-
-
 
 

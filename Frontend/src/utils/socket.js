@@ -4,11 +4,21 @@ import { reset as resetAuth } from "../redux/slices/auth";
 import { reset as resetChat } from "../redux/slices/chat";
 import { reset as resetApp } from "../redux/slices/app";
 import { setSocket } from "../redux/slices/user";
+import { isJwtToken } from "./authToken";
 // import { dispatch } from "../redux/store";
 let socket = null;
-let BASE_URL = "https://samvad-backend-latest.onrender.com";
+let BASE_URL = "http://localhost:8000";
 
 export const connectSocket =  (token, store) => {
+  if (!isJwtToken(token)) {
+    return null;
+  }
+
+  if (socket) {
+    socket.disconnect();
+    socket = null;
+  }
+
   const { dispatch } = store;
   socket = io(BASE_URL, {
     auth: { token },
@@ -57,12 +67,14 @@ export const disconnectSocket = (store) => {
 
     socket = null;
     console.log("🔌 Socket disconnected.");
-    const { dispatch } = store;
+    if (store?.dispatch) {
+      const { dispatch } = store;
 
-    // Reset all slices
-    dispatch(resetUser());
-    dispatch(resetAuth());
-    dispatch(resetChat());
-    dispatch(resetApp());
+      // Reset all slices
+      dispatch(resetUser());
+      dispatch(resetAuth());
+      dispatch(resetChat());
+      dispatch(resetApp());
+    }
   }
 };
