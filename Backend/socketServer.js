@@ -5,7 +5,6 @@ const startTypingHandler = require('./socketHandlers/startTypingHandler');
 const stopTypingHandler = require('./socketHandlers/stopTypingHandler');
 const chatHistoryHandler = require('./socketHandlers/getMessageHistory');
 const newMessageHandler = require('./socketHandlers/newMessageHandler');
-const callHandler = require("./socketHandlers/callHandler");
 
 const userSocketMap = new Map();
 
@@ -117,6 +116,8 @@ const registerSocketServer = (server) => {
                     break;
                 }
             }
+            // Update user status to Offline in DB and broadcast disconnection
+            disconnectHandler(socket, io);
             console.log("User disconnected:", socket.id);
         });
     }); // <-- closes io.on('connection')

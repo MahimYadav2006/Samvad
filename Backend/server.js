@@ -10,10 +10,7 @@ const server = http.createServer(app);
 socketServer.registerSocketServer(server);
 
 
-mongoose.connect(process.env.MONGO_URI, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-})
+mongoose.connect(process.env.MONGO_URI)
 .then(() => {
     server.listen(PORT, () => {
         console.log("✅ MongoDB Connected and Server started on PORT", PORT);

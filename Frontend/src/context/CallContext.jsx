@@ -37,16 +37,28 @@ export const CallProvider = ({ children }) => {
   //   console.log("Socket initialized in CallProvider:", s);
   // }, []);
 
-  // ICE servers configuration
+  // ICE servers configuration (STUN + TURN for cross-network connectivity)
+  const turnUrls = import.meta.env.VITE_TURN_URLS;
+  const turnUsername = import.meta.env.VITE_TURN_USERNAME;
+  const turnCredential = import.meta.env.VITE_TURN_CREDENTIAL;
+
   const iceServers = {
     iceServers: [
       { urls: "stun:stun.l.google.com:19302" },
       { urls: "stun:stun1.l.google.com:19302" },
+      ...(turnUrls
+        ? turnUrls.split(",").map((url) => ({
+            urls: url.trim(),
+            username: turnUsername,
+            credential: turnCredential,
+          }))
+        : []),
     ],
   };
 
   // ✅ Create PeerConnection
-  const createPeerConnection = () => {
+  // Accept remoteUserId as a parameter to avoid stale closure over remoteUser state
+  const createPeerConnection = (remoteUserId) => {
     const peerConnection = new RTCPeerConnection(iceServers);
 
     // Add local tracks
@@ -56,21 +68,28 @@ export const CallProvider = ({ children }) => {
       });
     }
 
-    // Handle ICE candidates
+    // Handle ICE candidates - use remoteUserId param instead of remoteUser state
     peerConnection.onicecandidate = (event) => {
-      if (event.candidate && remoteUser && socket) {
+      if (event.candidate && remoteUserId && socket) {
         socket.emit("call:ice-candidate", {
-          to: remoteUser._id,
+          to: remoteUserId,
           candidate: event.candidate,
         });
       }
     };
 
-    // Handle remote stream
+    // Handle remote stream - always save to ref, then try to attach to video element
     peerConnection.ontrack = (event) => {
+      remoteStreamRef.current = event.streams[0];
       if (remoteVideoRef.current) {
-        remoteStreamRef.current = event.streams[0];
         remoteVideoRef.current.srcObject = event.streams[0];
+      }
+    };
+
+    // Detect remote disconnection (e.g. browser crash) via ICE state
+    peerConnection.oniceconnectionstatechange = () => {
+      if (peerConnection.iceConnectionState === "failed") {
+        cleanupCall();
       }
     };
 
@@ -114,7 +133,7 @@ const initiateCall = async (recipient, type = "video") => {
 
     console.log("🔗 Creating peer connection...");
     // Create peer connection
-    const peerConnection = createPeerConnection();
+    const peerConnection = createPeerConnection(recipient._id);
     console.log("✅ Peer connection created");
 
     // Create offer
@@ -136,7 +155,7 @@ const initiateCall = async (recipient, type = "video") => {
   } catch (error) {
     console.error("❌ Error initiating call:", error);
     alert(`Error initiating call: ${error.message}`);
-    endCall();
+    cleanupCall();
   }
 };
 
@@ -147,10 +166,10 @@ const initiateCall = async (recipient, type = "video") => {
     try {
       setIsCallActive(true);
       setCallType(incomingCall.type || "video");
-      setRemoteUser({ _id: incomingCall.from });
-      // console.log("###### DEBUGGING ####### incomingCall is ",incomingCall);
-      await getUserMedia(incomingCall.type === "video", true); // #AudioCallBug
-      const peerConnection = createPeerConnection();
+      setRemoteUser({ _id: incomingCall.from, name: incomingCall.callerName });
+
+      await getUserMedia(incomingCall.type === "video", true);
+      const peerConnection = createPeerConnection(incomingCall.from);
 
       await peerConnection.setRemoteDescription(
         new RTCSessionDescription(incomingCall.offer)
@@ -179,12 +198,9 @@ const initiateCall = async (recipient, type = "video") => {
     }
   };
 
-  // ✅ End call
-  const endCall = () => {
-    if (remoteUser && socket) {
-      socket.emit("call:end", { to: remoteUser._id });
-    }
-
+  // Local-only cleanup (no socket emission) - used when the remote side
+  // already knows the call ended (e.g. receiving call:ended, call:rejected, call:user-busy)
+  const cleanupCall = () => {
     if (localStreamRef.current) {
       localStreamRef.current.getTracks().forEach((track) => track.stop());
       localStreamRef.current = null;
@@ -202,6 +218,14 @@ const initiateCall = async (recipient, type = "video") => {
     setIsMuted(false);
     setIsVideoOff(false);
     remoteStreamRef.current = null;
+  };
+
+  // ✅ End call (user-initiated) - notifies remote side, then cleans up locally
+  const endCall = () => {
+    if (remoteUser && socket) {
+      socket.emit("call:end", { to: remoteUser._id });
+    }
+    cleanupCall();
   };
 
   // ✅ Toggle mute
@@ -278,21 +302,21 @@ const initiateCall = async (recipient, type = "video") => {
   // Call ended
   socket.on("call:ended", () => {
     console.log("📴 Call ended by remote user");
-    endCall();
+    cleanupCall();
   });
 
   // Call rejected
   socket.on("call:rejected", () => {
     console.log("❌ Call was rejected");
     alert("Call was rejected");
-    endCall();
+    cleanupCall();
   });
-  
+
   // User busy
   socket.on("call:user-busy", () => {
     console.log("⏳ User is busy");
     alert("User is busy");
-    endCall();
+    cleanupCall();
   });
 
     return () => {
@@ -303,7 +327,7 @@ const initiateCall = async (recipient, type = "video") => {
       socket.off("call:rejected");
       socket.off("call:user-busy");
     };
-  }, [socket, user, remoteUser]);
+  }, [socket, user]);
 
   const value = {
     isCallActive,
@@ -314,6 +338,7 @@ const initiateCall = async (recipient, type = "video") => {
     remoteUser,
     localVideoRef,
     remoteVideoRef,
+    remoteStreamRef,
     initiateCall,
     answerCall,
     rejectCall,

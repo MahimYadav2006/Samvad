@@ -23,9 +23,8 @@ const newMessageHandler = async (socket, data, io, ack) => {
         conversation.messages.push(newMessage._id);
         await conversation.save();
 
-        // Populate conversation
+        // Only populate participants (not messages) to find who is online
         const updatedConversation = await Conversation.findById(conversationId)
-            .populate("messages")
             .populate("participants");
 
         // Find online participants

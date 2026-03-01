@@ -13,7 +13,7 @@ const Mailer = require("../services/mailer");
 
 
 // Functions
-const signToken = (userId) => jwt.sign({userId},process.env.TOKEN_KEY);
+const signToken = (userId) => jwt.sign({userId},process.env.TOKEN_KEY, { expiresIn: '7d' });
 const GOOGLE_TOKEN_INFO_URL = "https://oauth2.googleapis.com/tokeninfo";
 const GOOGLE_USER_INFO_URL = "https://www.googleapis.com/oauth2/v3/userinfo";
 const JWT_TOKEN_REGEX = /^[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+$/;
@@ -56,16 +56,10 @@ exports.register = catchAsync(async(req,res,next)=>{
             message: "User already exists and verified ",
         });
     }
-    let new_user;
-    if (existingUser && existingUser.verified) {
-        return res.status(400).json({
-            status: "error",
-            message: "User already exists and verified ",
-        });
-    } else if (existingUser && !existingUser.verified) {
+    if (existingUser && !existingUser.verified) {
         await User.findOneAndDelete({ email: email });
     }
-    new_user = await User.create({ name, email, password });
+    const new_user = await User.create({ name, email, password });
     req.userId = new_user._id;
     next();
 
@@ -200,6 +194,13 @@ exports.login = catchAsync(async (req,res,next)=>{
             status: "error",
             message: "Incorrect Password"
         })
+    }
+
+    if(!user.verified){
+        return res.status(403).json({
+            status: "error",
+            message: "Please verify your email before logging in",
+        });
     }
 
     const token = signToken(user._id);

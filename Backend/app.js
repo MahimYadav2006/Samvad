@@ -3,8 +3,6 @@ const morgan = require("morgan");
 const rateLimit = require("express-rate-limit");
 const helmet = require("helmet");
 const mongoSanitize = require("express-mongo-sanitize");
-const xss = require("xss-clean");
-const bodyParser = require("body-parser");
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
 
@@ -14,9 +12,8 @@ const app = express();
 
 // Enable CORS
 app.use(cors({
-    origin: "*", // Allow all origins
+    origin: "*",
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
-    credentials: true
 }));
 
 // Security Headers
@@ -32,27 +29,22 @@ app.use(express.urlencoded({ extended: true }));
 // Cookie Parser
 app.use(cookieParser());
 
-// Optional: If you still need bodyParser separately
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
-
-// Rate Limiting
-const limiter = rateLimit({
-    max: 3000,
-    windowMs: 60 * 60 * 1000, // 1 hour
-    message: "Too many requests from this IP, please try again in an hour!"
+// Rate Limiting on auth routes
+const authLimiter = rateLimit({
+    max: 20,
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    message: "Too many authentication attempts, please try again later",
 });
-app.use("/api", limiter);
+app.use("/auth", authLimiter);
 
-// Sanitize data against NoSQL injection (avoid `req.query` error)
+// Sanitize data against NoSQL injection
+// express-mongo-sanitize() as middleware is incompatible with Express 5
+// (req.query is a read-only getter in Express 5), so sanitize manually.
 app.use((req, res, next) => {
     if (req.body) mongoSanitize.sanitize(req.body);
     if (req.params) mongoSanitize.sanitize(req.params);
     next();
 });
-
-// Sanitize against XSS attacks
-// app.use(xss());
 
 // Mount Routes
 app.use(routes);
