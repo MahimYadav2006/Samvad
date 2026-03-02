@@ -1,23 +1,66 @@
 const User = require("../Models/User")
 
-const disconnectHandler = async (socket,io)=>{
+const disconnectHandler = async (socket, io, options = {}) => {
+    const {
+        userId: providedUserId,
+        hasOtherConnections = false,
+        nextSocketId = null,
+    } = options;
+
     // Log the connection
     console.log(`User with socket ${socket.id} got disconnected in disconnectHandler.js`);
 
-    // Update the user set the socker Id to undefined and status to offline
-    const user = await User.findOneAndUpdate({socketId: socket.id},{socketId: undefined,status:"Offline"},{new:true, validateModifiedOnly: true});
-    
-    if(user){
-        // broadcast to everyone that new user got disconnected
-        socket.broadcast.emit('user-disconnected',{
-            message: `${user.name} got disconnected in disconnectHandler.js`,
-            userId: user.id,
+    try {
+        const userId = providedUserId || socket.user?.userId;
+        if (!userId) {
+            // Fallback if socket.user isn't available
+            const userBySocket = await User.findOneAndUpdate(
+                { socketId: socket.id },
+                { $unset: { socketId: 1 }, status: "Offline" },
+                { new: true, validateModifiedOnly: true }
+            );
+
+            if (userBySocket) {
+                socket.broadcast.emit('user-disconnected', {
+                    message: `${userBySocket.name} got disconnected in disconnectHandler.js`,
+                    userId: userBySocket._id,
+                    status: "Offline",
+                });
+            }
+            return;
+        }
+
+        if (hasOtherConnections) {
+            // Keep user online if at least one socket is still active.
+            const updates = { status: "Online" };
+            if (nextSocketId) {
+                updates.socketId = nextSocketId;
+            }
+
+            await User.findByIdAndUpdate(
+                userId,
+                updates,
+                { new: true, validateModifiedOnly: true }
+            );
+            return;
+        }
+
+        // Last socket disconnected -> mark offline.
+        const user = await User.findByIdAndUpdate(userId, {
+            $unset: { socketId: 1 },
             status: "Offline",
-        });
+        }, { new: true, validateModifiedOnly: true });
         
-    }
-    else{
-        console.log(`User with Id ${socket.id} not found in newConnectionHandler.js`)
+        if (user) {
+            // Broadcast only when user's final socket disconnects
+            socket.broadcast.emit('user-disconnected', {
+                message: `${user.name} got disconnected`,
+                userId: user._id,
+                status: "Offline",
+            });
+        }
+    } catch (error) {
+        console.error("Error in disconnectHandler:", error);
     }
 }
 

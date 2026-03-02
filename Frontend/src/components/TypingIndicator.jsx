@@ -1,16 +1,14 @@
-export default function TypingIndicator(){
-    return (
-        <div className="flex flex-row items-center space-x-3 max-w-fit bg-gray dark:bg-boxdark-2 p-4 rounded-xl rounded-tl-none">
-            <div className="text-md text-body dark:text-white">
-
-                <div className="ticontainer">
-                        ṣ
-                    <div className="flex items-center h-[17px]">
-                        <div className="tidot"></div>
-                        <div className="tidot"></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    )
+export default function TypingIndicator() {
+  return (
+    <div className="flex items-end gap-2 py-1">
+      <div className="flex items-center gap-1.5 rounded-2xl rounded-bl-sm bg-gray-2 px-4 py-3 shadow-sm dark:bg-meta-4">
+        <span className="tidot bg-primary/70 dark:bg-primary/80"></span>
+        <span className="tidot bg-primary/70 dark:bg-primary/80"></span>
+        <span className="tidot bg-primary/70 dark:bg-primary/80"></span>
+      </div>
+      <span className="mb-0.5 text-[11px] font-medium text-body/70 dark:text-bodydark/70">
+        typing
+      </span>
+    </div>
+  );
 }

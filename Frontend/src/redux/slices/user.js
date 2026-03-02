@@ -42,6 +42,12 @@ const slice = createSlice({
         addCurrMessage(state, action) {
             state.currMessages.push(action.payload);
         },
+        updateOppositeUserStatus(state, action) {
+            const { userId, status } = action.payload;
+            if (state.oppositeUser && state.oppositeUser._id === userId) {
+                state.oppositeUser = { ...state.oppositeUser, status };
+            }
+        },
         reset: () => initialState,        
     }
 });
@@ -53,6 +59,7 @@ export { addCurrMessage };
 export const { reset } = slice.actions;
 const {setLoading,setError,setUser,setCurrentConversation,setCurrMessages,setOppositeUser,setSocket} = slice.actions;
 export {setSocket};
+export const { updateOppositeUserStatus } = slice.actions;
 
 const getAuthToken = (getState) => {
     const token = getState().auth.token;

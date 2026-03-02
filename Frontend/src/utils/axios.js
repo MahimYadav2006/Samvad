@@ -1,8 +1,9 @@
 import axios from 'axios';
 import { isJwtToken } from './authToken';
+import { getBackendUrl } from './networkConfig';
 
 // Configuring Base URL
-const BASE_URL = "http://localhost:8000";
+const BASE_URL = getBackendUrl();
 
 
 // const BASE_URL = "https://707e82ada361.ngrok-free.app";
@@ -31,4 +32,3 @@ axiosInstance.interceptors.request.use(
 )
 
 export default axiosInstance;
-

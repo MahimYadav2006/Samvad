@@ -1,9 +1,11 @@
 import { io } from "socket.io-client";
-import { setSocket } from "../redux/slices/user";
+import { setSocket, updateOppositeUserStatus } from "../redux/slices/user";
+import { setTypingIndicator, updateUserOnlineStatus } from "../redux/slices/chat";
 import { isJwtToken } from "./authToken";
+import { getBackendUrl } from "./networkConfig";
 
 let socket = null;
-const BASE_URL = "http://localhost:8000";
+const BASE_URL = getBackendUrl();
 
 export const connectSocket = (token, store) => {
   if (!isJwtToken(token)) {
@@ -39,6 +41,37 @@ export const connectSocket = (token, store) => {
         payload: data.message,
       });
     }
+  });
+
+  // Typing indicator listener
+  socket.on("typing-indicator", (data) => {
+    dispatch(setTypingIndicator({
+      conversationId: data.conversationId,
+      typing: data.typing,
+    }));
+  });
+
+  // Online status listeners
+  socket.on("user-connected", (data) => {
+    dispatch(updateUserOnlineStatus({
+      userId: data.userId,
+      status: "Online",
+    }));
+    dispatch(updateOppositeUserStatus({
+      userId: data.userId,
+      status: "Online",
+    }));
+  });
+
+  socket.on("user-disconnected", (data) => {
+    dispatch(updateUserOnlineStatus({
+      userId: data.userId,
+      status: "Offline",
+    }));
+    dispatch(updateOppositeUserStatus({
+      userId: data.userId,
+      status: "Offline",
+    }));
   });
 
   return socket;

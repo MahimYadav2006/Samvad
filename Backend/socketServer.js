@@ -6,7 +6,54 @@ const stopTypingHandler = require('./socketHandlers/stopTypingHandler');
 const chatHistoryHandler = require('./socketHandlers/getMessageHistory');
 const newMessageHandler = require('./socketHandlers/newMessageHandler');
 
-const userSocketMap = new Map();
+const userSocketMap = new Map(); // userId -> Set(socketIds)
+
+const normalizeUserId = (value) => {
+    if (!value) return null;
+    return String(value);
+};
+
+const addSocketForUser = (userId, socketId) => {
+    const normalizedUserId = normalizeUserId(userId);
+    if (!normalizedUserId) return 0;
+
+    let sockets = userSocketMap.get(normalizedUserId);
+    if (!sockets) {
+        sockets = new Set();
+        userSocketMap.set(normalizedUserId, sockets);
+    }
+
+    sockets.add(socketId);
+    return sockets.size;
+};
+
+const removeSocketForUser = (userId, socketId) => {
+    const normalizedUserId = normalizeUserId(userId);
+    if (!normalizedUserId) {
+        return { remainingCount: 0, nextSocketId: null };
+    }
+
+    const sockets = userSocketMap.get(normalizedUserId);
+    if (!sockets) {
+        return { remainingCount: 0, nextSocketId: null };
+    }
+
+    sockets.delete(socketId);
+
+    if (sockets.size === 0) {
+        userSocketMap.delete(normalizedUserId);
+        return { remainingCount: 0, nextSocketId: null };
+    }
+
+    const nextSocketId = sockets.values().next().value || null;
+    return { remainingCount: sockets.size, nextSocketId };
+};
+
+const getSocketCountForUser = (userId) => {
+    const normalizedUserId = normalizeUserId(userId);
+    if (!normalizedUserId) return 0;
+    return userSocketMap.get(normalizedUserId)?.size || 0;
+};
 
 const registerSocketServer = (server) => {
     const io = require('socket.io')(server, {
@@ -21,15 +68,38 @@ const registerSocketServer = (server) => {
     });
 
     io.on('connection', (socket) => {
-        console.log("✅ [socketServer.js] User connected:", socket.id);
+        const userId = normalizeUserId(socket.user?.userId);
+        if (!userId) {
+            console.log(`⚠️ [socketServer.js] Missing userId for socket ${socket.id}. Disconnecting.`);
+            socket.disconnect(true);
+            return;
+        }
+
+        socket.data.userId = userId;
+        socket.join(userId);
+        const activeConnections = addSocketForUser(userId, socket.id);
+
+        console.log(`✅ [socketServer.js] User connected: ${socket.id} (user ${userId}, active sockets: ${activeConnections})`);
 
         // New Connection Handler
-        newConnectionHandler(socket, io);
+        newConnectionHandler(socket, io, {
+            isFirstConnection: activeConnections === 1,
+        });
 
-        socket.on("user:join", (userId) => {
+        // Backward-compatible explicit join event
+        socket.on("user:join", (joinedUserId) => {
+            const normalizedJoinedId = normalizeUserId(joinedUserId);
+            if (!normalizedJoinedId || normalizedJoinedId !== userId) {
+                console.log(`⚠️ [socketServer.js] Ignored invalid user:join from socket ${socket.id}`);
+                return;
+            }
+
             socket.join(userId);
-            userSocketMap.set(userId, socket.id);
-            console.log(`✅ User ${userId} joined with socket ${socket.id}`);
+            if (!userSocketMap.get(userId)?.has(socket.id)) {
+                addSocketForUser(userId, socket.id);
+            }
+
+            console.log(`✅ User ${userId} joined room with socket ${socket.id}`);
         });
 
         // newMessageHandler with ack
@@ -56,69 +126,71 @@ const registerSocketServer = (server) => {
         socket.on("call:initiate", ({ to, offer, from, callerName, type }) => {
             console.log(`📞 Call from ${from} (${callerName}) to ${to} of type ${type}`);
 
-            const recipientSocketId = userSocketMap.get(to);
+            const recipientId = normalizeUserId(to);
+            const recipientSocketCount = getSocketCountForUser(recipientId);
 
-            if (recipientSocketId) {
-                console.log(`✅ Emitting to recipient socket: ${recipientSocketId}`);
-                io.to(recipientSocketId).emit("call:incoming", {
+            if (recipientSocketCount > 0) {
+                console.log(`✅ Emitting incoming call to user ${recipientId} (${recipientSocketCount} active socket(s))`);
+                io.to(recipientId).emit("call:incoming", {
                     from,
                     offer,
                     callerName,
                     type,
                 });
             } else {
-                console.log(`❌ Recipient ${to} not found in userSocketMap`);
-                console.log("Current map:", Array.from(userSocketMap.entries()));
+                console.log(`❌ Recipient ${recipientId || to} is offline or not found`);
             }
         });
 
 
         socket.on("call:answer", ({ to, answer }) => {
-            const callerSocketId = userSocketMap.get(to);
-            if (callerSocketId) {
-                io.to(callerSocketId).emit("call:answered", { answer });
+            const recipientId = normalizeUserId(to);
+            if (getSocketCountForUser(recipientId) > 0) {
+                io.to(recipientId).emit("call:answered", { answer });
             }
         });
 
         socket.on("call:ice-candidate", ({ to, candidate }) => {
-            const recipientSocketId = userSocketMap.get(to);
-            if (recipientSocketId) {
-                io.to(recipientSocketId).emit("call:ice-candidate", { candidate });
+            const recipientId = normalizeUserId(to);
+            if (getSocketCountForUser(recipientId) > 0) {
+                io.to(recipientId).emit("call:ice-candidate", { candidate });
             }
         });
 
         socket.on("call:end", ({ to }) => {
-            const recipientSocketId = userSocketMap.get(to);
-            if (recipientSocketId) {
-                io.to(recipientSocketId).emit("call:ended");
+            const recipientId = normalizeUserId(to);
+            if (getSocketCountForUser(recipientId) > 0) {
+                io.to(recipientId).emit("call:ended");
             }
         });
 
         socket.on("call:reject", ({ to }) => {
-            const callerSocketId = userSocketMap.get(to);
-            if (callerSocketId) {
-                io.to(callerSocketId).emit("call:rejected");
+            const recipientId = normalizeUserId(to);
+            if (getSocketCountForUser(recipientId) > 0) {
+                io.to(recipientId).emit("call:rejected");
             }
         });
 
         socket.on("call:busy", ({ to }) => {
-            const callerSocketId = userSocketMap.get(to);
-            if (callerSocketId) {
-                io.to(callerSocketId).emit("call:user-busy");
+            const recipientId = normalizeUserId(to);
+            if (getSocketCountForUser(recipientId) > 0) {
+                io.to(recipientId).emit("call:user-busy");
             }
         });
 
         // Handle disconnection
         socket.on("disconnect", () => {
-            for (const [userId, socketId] of userSocketMap.entries()) {
-                if (socketId === socket.id) {
-                    userSocketMap.delete(userId);
-                    break;
-                }
-            }
+            const disconnectedUserId = socket.data?.userId || normalizeUserId(socket.user?.userId);
+            const { remainingCount, nextSocketId } = removeSocketForUser(disconnectedUserId, socket.id);
+
             // Update user status to Offline in DB and broadcast disconnection
-            disconnectHandler(socket, io);
-            console.log("User disconnected:", socket.id);
+            disconnectHandler(socket, io, {
+                userId: disconnectedUserId,
+                hasOtherConnections: remainingCount > 0,
+                nextSocketId,
+            });
+
+            console.log(`User disconnected: ${socket.id} (user ${disconnectedUserId}, remaining sockets: ${remainingCount})`);
         });
     }); // <-- closes io.on('connection')
 }; // <-- closes registerSocketServer

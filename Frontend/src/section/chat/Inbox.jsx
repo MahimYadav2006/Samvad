@@ -10,7 +10,7 @@ import {
 } from "@phosphor-icons/react";
 import Dropdown from "../../components/Dropdown";
 import EmojiPicker from "../../components/EmojiPicker";
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import Giphy from "../../components/Giphy";
 import { useDispatch, useSelector } from "react-redux";
 import { toggleAudioModal } from "../../redux/slices/app";
@@ -22,6 +22,8 @@ import GiphyMessage from "../../components/Messages/GiphyMessage";
 import MediaMessage from "../../components/Messages/MediaMessage";
 import { useCall } from "../../context/CallContext";
 import UserInfo from "./UserInfo";
+import TypingIndicator from "../../components/TypingIndicator";
+import { getSocket } from "../../utils/socket";
 
 function Inbox({ otherPerson, onBackToList, className = "" }) {
   const dispatch = useDispatch();
@@ -43,8 +45,70 @@ function Inbox({ otherPerson, onBackToList, className = "" }) {
   const currMessages = useSelector((state) => state.user.currMessages);
   const oppositeUser = useSelector((state) => state.user.oppositeUser);
   const user = useSelector((state) => state.user.user);
+  const currConversation = useSelector((state) => state.user.currConversation);
+  const typingIndicators = useSelector((state) => state.chat.typingIndicators);
   const currentUserId = user?._id;
   const hasConversation = Boolean(otherPerson);
+  const isOppositeUserTyping = currConversation && typingIndicators[currConversation];
+
+  // Typing event refs
+  const typingTimeoutRef = useRef(null);
+  const isTypingRef = useRef(false);
+
+  const emitStartTyping = useCallback(() => {
+    const socket = getSocket();
+    if (!socket || !oppositeUser?._id || !currConversation) return;
+
+    if (!isTypingRef.current) {
+      isTypingRef.current = true;
+      socket.emit("start-typing", {
+        userId: oppositeUser._id,
+        conversationId: currConversation,
+      });
+    }
+
+    // Reset the stop-typing timeout
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+    }
+
+    typingTimeoutRef.current = setTimeout(() => {
+      isTypingRef.current = false;
+      socket.emit("stop-typing", {
+        userId: oppositeUser._id,
+        conversationId: currConversation,
+      });
+    }, 2000);
+  }, [oppositeUser?._id, currConversation]);
+
+  const emitStopTyping = useCallback(() => {
+    const socket = getSocket();
+    if (!socket || !oppositeUser?._id || !currConversation) return;
+
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+      typingTimeoutRef.current = null;
+    }
+
+    if (isTypingRef.current) {
+      isTypingRef.current = false;
+      socket.emit("stop-typing", {
+        userId: oppositeUser._id,
+        conversationId: currConversation,
+      });
+    }
+  }, [oppositeUser?._id, currConversation]);
+
+  // Cleanup typing timeout on unmount or conversation change
+  useEffect(() => {
+    return () => {
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
+      // Emit stop typing when switching conversations
+      emitStopTyping();
+    };
+  }, [currConversation, emitStopTyping]);
 
   const handleToggleGif = (e) => {
     e.preventDefault();
@@ -95,6 +159,13 @@ function Inbox({ otherPerson, onBackToList, className = "" }) {
     previousMessageCountRef.current = nextMessageCount;
   }, [currMessages, otherPerson, hasConversation]);
 
+  // Auto-scroll when typing indicator appears
+  useEffect(() => {
+    if (isOppositeUserTyping) {
+      requestAnimationFrame(() => scrollToBottom("smooth"));
+    }
+  }, [isOppositeUserTyping]);
+
   useEffect(() => {
     setIsProfileOpen(false);
   }, [otherPerson]);
@@ -115,6 +186,7 @@ function Inbox({ otherPerson, onBackToList, className = "" }) {
   const handleSendMessage = () => {
     if (!messageText.trim() || !currentUserId) return;
 
+    emitStopTyping();
     dispatch(
       newDirectMessage({
         content: messageText,
@@ -147,20 +219,47 @@ function Inbox({ otherPerson, onBackToList, className = "" }) {
                 disabled={!oppositeUser || !oppositeUser._id}
                 className="flex min-w-0 items-center gap-3 text-left disabled:opacity-80"
               >
-                <div className="h-11 w-11 shrink-0 overflow-hidden rounded-2xl">
+                <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-2xl">
                   <img
                     src={oppositeUser.avatar || User01}
                     alt="avatar"
                     className="h-full w-full object-cover object-center"
                   />
+                  {oppositeUser.name && (
+                    `${oppositeUser.status || ""}`.toLowerCase() === "online" ? (
+                      <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-white dark:border-boxdark">
+                        <span className="absolute inset-0 animate-ping rounded-full bg-success opacity-40" />
+                        <span className="absolute inset-0 rounded-full bg-success" />
+                      </span>
+                    ) : (
+                      <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-white bg-graydark dark:border-boxdark" />
+                    )
+                  )}
                 </div>
                 <div className="min-w-0">
                   <h5 className="truncate text-sm font-bold text-black dark:text-white md:text-base">
                     {oppositeUser.name || "Select a chat"}
                   </h5>
-                  <p className="text-xs text-body dark:text-bodydark">
-                    {`${oppositeUser.status || "Offline"}`}
-                  </p>
+                  <div className="flex items-center gap-1.5">
+                    {oppositeUser.name && (
+                      <span
+                        className={`inline-block h-2 w-2 rounded-full ${
+                          `${oppositeUser.status || ""}`.toLowerCase() === "online"
+                            ? "bg-success animate-pulse"
+                            : "bg-graydark"
+                        }`}
+                      />
+                    )}
+                    <p className={`text-xs font-medium ${
+                      `${oppositeUser.status || ""}`.toLowerCase() === "online"
+                        ? "text-success"
+                        : "text-body dark:text-bodydark"
+                    }`}>
+                      {isOppositeUserTyping
+                        ? "typing..."
+                        : `${oppositeUser.status || "Offline"}`}
+                    </p>
+                  </div>
                 </div>
               </button>
             </div>
@@ -285,6 +384,9 @@ function Inbox({ otherPerson, onBackToList, className = "" }) {
                 }
                 return null;
               })}
+
+            {/* Typing indicator */}
+            {isOppositeUserTyping && <TypingIndicator />}
           </div>
 
           <div className="border-t border-stroke/70 bg-white/80 px-3 py-3 dark:border-strokedark/70 dark:bg-boxdark-2/70 md:px-6 md:py-4">
@@ -300,10 +402,18 @@ function Inbox({ otherPerson, onBackToList, className = "" }) {
                   type="text"
                   placeholder="Type your message..."
                   value={messageText}
-                  onChange={(e) => setMessageText(e.target.value)}
+                  onChange={(e) => {
+                    setMessageText(e.target.value);
+                    if (e.target.value.trim()) {
+                      emitStartTyping();
+                    } else {
+                      emitStopTyping();
+                    }
+                  }}
                   onKeyDown={(e) => {
                     if (e.key === "Enter" && !e.shiftKey) {
                       e.preventDefault();
+                      emitStopTyping();
                       handleSendMessage();
                     }
                   }}

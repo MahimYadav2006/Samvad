@@ -8,28 +8,43 @@ const initialState = {
     userList: [],
     isLoading: false,
     error: null,
+    typingIndicators: {}, // { [conversationId]: boolean }
 };
 
 const slice = createSlice({
     name: "user",
     initialState,
     reducers: {
-        updateUserList(state,action){
+        updateUserList(state, action) {
             state.userList = action.payload;
         },
-        setError(state,action){
+        setError(state, action) {
             state.error = action.payload;
         },
-        setLoading(state,action){
+        setLoading(state, action) {
             state.isLoading = action.payload;
+        },
+        setTypingIndicator(state, action) {
+            const { conversationId, typing } = action.payload;
+            if (typing) {
+                state.typingIndicators[conversationId] = true;
+            } else {
+                delete state.typingIndicators[conversationId];
+            }
+        },
+        updateUserOnlineStatus(state, action) {
+            const { userId, status } = action.payload;
+            state.userList = state.userList.map((user) =>
+                user._id === userId ? { ...user, status } : user
+            );
         },
         reset: () => initialState,
     }
 });
 
 export default slice.reducer;
-export const { reset } = slice.actions;
-const {setLoading,setError,updateUserList} = slice.actions;
+export const { reset, setTypingIndicator, updateUserOnlineStatus } = slice.actions;
+const { setLoading, setError, updateUserList } = slice.actions;
 
 const getAuthToken = (getState) => {
     const token = getState().auth.token;

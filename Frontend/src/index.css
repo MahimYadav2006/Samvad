@@ -90,32 +90,35 @@ html {
 }
 
 .tidot {
-  @apply mr-[2px] inline-block h-[4px] w-[4px] rounded-[2px];
-  animation: mercuryTypingAnimation 1.5s infinite ease-in-out;
+  @apply inline-block h-[6px] w-[6px] rounded-full;
+  animation: mercuryTypingAnimation 1.4s infinite ease-in-out;
 }
 
 @keyframes mercuryTypingAnimation {
   0% {
-    -webkit-transform: translateY(0px);
+    transform: translateY(0px);
+    opacity: 0.4;
   }
   28% {
-    -webkit-transform: translateY(-5px);
+    transform: translateY(-5px);
+    opacity: 1;
   }
   44% {
-    -webkit-transform: translateY(0px);
+    transform: translateY(0px);
+    opacity: 0.4;
   }
 }
 
 .tidot:nth-child(1) {
-  animation-delay: 200ms;
+  animation-delay: 0ms;
 }
 
 .tidot:nth-child(2) {
+  animation-delay: 150ms;
+}
+
+.tidot:nth-child(3) {
   animation-delay: 300ms;
-}
-
-.tidot:nth-child(2) {
-  animation-delay: 400ms;
 }
 
 /* ── Call UI Animations ─────────────────────────────── */

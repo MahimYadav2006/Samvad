@@ -92,11 +92,15 @@ function ChatList({
                       alt="profile"
                       className="h-full w-full object-cover object-center"
                     />
-                    <span
-                      className={`absolute bottom-0 right-0 h-3.5 w-3.5 rounded-full border-2 border-white dark:border-boxdark ${
-                        isOnline ? "bg-success" : "bg-graydark"
-                      }`}
-                    />
+                    {isOnline && (
+                      <span className="absolute bottom-0 right-0 h-3.5 w-3.5 rounded-full border-2 border-white dark:border-boxdark">
+                        <span className="absolute inset-0 animate-ping rounded-full bg-success opacity-40" />
+                        <span className="absolute inset-0 rounded-full bg-success" />
+                      </span>
+                    )}
+                    {!isOnline && (
+                      <span className="absolute bottom-0 right-0 h-3.5 w-3.5 rounded-full border-2 border-white bg-graydark dark:border-boxdark" />
+                    )}
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-semibold text-black dark:text-white">

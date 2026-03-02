@@ -1,33 +1,38 @@
-// Firstly uopdated the socketId and the status in the User model
-
 const User = require("../Models/User");
 
-let newConnectionHandler = async (socket,io)=>{
-    const {userId} = socket.user;
+const newConnectionHandler = async (socket, io, options = {}) => {
+    const { isFirstConnection = true } = options;
+    const userId = socket.user?.userId;
+    if (!userId) {
+        console.log(`[newConnectionHandler] Missing userId for socket ${socket.id}`);
+        return;
+    }
 
     // Log new user connected
-    console.log("New User Connected: (In newConnectionHandler.js): ",socket.id);
+    console.log("New User Connected: (In newConnectionHandler.js): ", socket.id);
 
-    const user = await User.findByIdAndUpdate(userId,{socketId: socket.id, status: "Online"},{new: true, validateModifiedOnly: true});
+    try {
+        const user = await User.findByIdAndUpdate(
+            userId,
+            { socketId: socket.id, status: "Online" },
+            { new: true, validateModifiedOnly: true }
+        );
 
-    if(user){
-        // broadcast to everyone that new user got connected
-        socket.broadcast.emit('user-connected',{
-            message: `${user.name} got connected`,
-            userId: user.id,
-            status: "Online",
-        });
-
+        if (user) {
+            // Broadcast only when the very first socket for this user gets connected
+            if (isFirstConnection) {
+                socket.broadcast.emit('user-connected', {
+                    message: `${user.name} got connected`,
+                    userId: user._id,
+                    status: "Online",
+                });
+            }
+        } else {
+            console.log(`User with Id ${userId} not found in newConnectionHandler.js`);
+        }
+    } catch (error) {
+        console.error("[newConnectionHandler] Error:", error.message);
     }
-    else{
-        console.log(`User with Id ${userId} not found in newConnectionHandler.js`)
-    }
-     
-
-
-}
-
-
-
+};
 
 module.exports = newConnectionHandler;

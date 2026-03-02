@@ -1,20 +1,28 @@
-const startTypingHandler = async (socket,data,io)=>{
-    const {userId,conversationId} = socket.user; // Fetch user Id of other person and the conversation in which they are currently
+const User = require("../Models/User");
 
-    // Fetch User by UserId
-    const user = await User.findById(userId);
+const startTypingHandler = async (socket, data, io) => {
+    const { userId, conversationId } = data; // userId = recipient's ID, conversationId = current conversation
 
-    if(user && user.status === "Online" && user.socketId){ // if the other user exist and is online then only give them the typing indicator
-        const dataToSend = {
-            conversationId,
-            typing: false,
-        };
-
-        io.to(user.socketId).emit("stop-typing", dataToSend); // Emit the typing indicator to the other user
+    if (!userId || !conversationId) {
+        console.log("[startTypingHandler] Missing userId or conversationId");
+        return;
     }
-    else{
-        console.log(`Within stopTypingHandler.js User with userId ${userId} is offline`);
+
+    try {
+        const user = await User.findById(userId);
+
+        if (user && user.status === "Online" && user.socketId) {
+            const dataToSend = {
+                conversationId,
+                typing: true,
+                senderId: socket.user.userId,
+            };
+
+            io.to(user.socketId).emit("typing-indicator", dataToSend);
+        }
+    } catch (err) {
+        console.error("[startTypingHandler] Error:", err.message);
     }
-}
+};
 
 module.exports = startTypingHandler;
