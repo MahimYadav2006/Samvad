@@ -12,34 +12,34 @@ export default function ProfilePage() {
 
   return (
     <div className="fancy-scrollbar h-full overflow-y-auto p-4 md:p-6">
-      <div className="surface-card mx-auto w-full max-w-5xl rounded-3xl p-4 shadow-xl shadow-primary/5 sm:p-6">
-        <div className="mb-5 border-b border-stroke/70 pb-4 dark:border-strokedark/70">
-          <h1 className="font-display text-2xl font-bold text-black dark:text-white md:text-3xl">
-            Profile Settings
+      <div className="mx-auto w-full max-w-2xl space-y-5">
+        <div>
+          <h1 className="font-display text-xl font-bold text-black dark:text-white">
+            Settings
           </h1>
-          <p className="mt-1 text-sm text-body dark:text-bodydark">
-            Manage your profile details and security preferences.
+          <p className="mt-0.5 text-sm text-body/60 dark:text-bodydark/50">
+            Manage your profile and security.
           </p>
+        </div>
 
-          <div className="mt-4 inline-flex rounded-2xl border border-stroke/70 bg-white/70 p-1 dark:border-strokedark dark:bg-boxdark-2/70">
-            {TABS.map((tab) => {
-              const isActive = openTab === tab.key;
-              return (
-                <button
-                  key={tab.key}
-                  type="button"
-                  onClick={() => setOpenTab(tab.key)}
-                  className={`rounded-xl px-4 py-2 text-sm font-semibold md:px-5 ${
-                    isActive
-                      ? "bg-primary text-white shadow-lg shadow-primary/20"
-                      : "text-body hover:text-black dark:text-bodydark dark:hover:text-white"
-                  }`}
-                >
-                  {tab.label}
-                </button>
-              );
-            })}
-          </div>
+        <div className="inline-flex rounded-xl border border-stroke/50 bg-white/60 p-1 dark:border-strokedark/30 dark:bg-boxdark-2/50">
+          {TABS.map((tab) => {
+            const isActive = openTab === tab.key;
+            return (
+              <button
+                key={tab.key}
+                type="button"
+                onClick={() => setOpenTab(tab.key)}
+                className={`rounded-lg px-4 py-1.5 text-sm font-semibold transition-all ${
+                  isActive
+                    ? "bg-primary text-white shadow-md shadow-primary/20"
+                    : "text-body/60 hover:text-black dark:text-bodydark/50 dark:hover:text-white"
+                }`}
+              >
+                {tab.label}
+              </button>
+            );
+          })}
         </div>
 
         <div>{openTab === 1 ? <ProfileForm /> : <UpdatePasswordForm />}</div>

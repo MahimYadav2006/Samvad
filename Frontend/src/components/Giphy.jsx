@@ -1,96 +1,120 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Grid } from "@giphy/react-components";
 import { GiphyFetch } from "@giphy/js-fetch-api";
-import _ from "lodash";
-const gf = new GiphyFetch("hOJ2C21sKprFvw6ocLv58dqYOacEzfF5");
+import debounce from "lodash/debounce";
 import { MagnifyingGlassIcon } from "@phosphor-icons/react";
 import { useDispatch } from "react-redux";
 import { toggleGifModal } from "../redux/slices/app";
+
+const gf = new GiphyFetch(
+  import.meta.env.VITE_GIPHY_API_KEY || "hOJ2C21sKprFvw6ocLv58dqYOacEzfF5"
+);
 
 export default function Giphy() {
   const dispatch = useDispatch();
   const gridRef = useRef(null);
   const [isLoading, setIsLoading] = useState(false);
   const [value, setValue] = useState("");
-  const [error, setError] = useState(false);
-  const [gifs, setGifs] = useState([]); // To store the fetched GIFs
+  const [error, setError] = useState(null);
+  const [gifs, setGifs] = useState([]);
 
-  const fetchGifs = async (offset) => {
-    return gf.search(value, { offset, limit: 10 });
-  };
+  const fetchGifs = useCallback(
+    (offset) => gf.search(value || "trending", { offset, limit: 10 }),
+    [value]
+  );
 
-  const debouncedFetchGifs = _.debounce(async () => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const initialGifs = await fetchGifs(0);
-      setGifs(initialGifs.data);
-    } catch (error) {
-      setError(error.message);
-    } finally {
-      setIsLoading(false);
-    }
-  }, 500);
-
-  useEffect(() => {
-    // fetch GIFs based on the search terms
-    const fetchInitialGifs = async () => {
+  const debouncedSearch = useCallback(
+    debounce(async (searchValue) => {
       setIsLoading(true);
       setError(null);
-
       try {
-        const initialGifs = await fetchGifs(0);
-        setGifs(initialGifs.data);
-      } catch (error) {
-        setError(error.message);
+        const result = await gf.search(searchValue || "trending", {
+          offset: 0,
+          limit: 10,
+        });
+        setGifs(result.data);
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setIsLoading(false);
+      }
+    }, 500),
+    []
+  );
+
+  useEffect(() => {
+    return () => debouncedSearch.cancel();
+  }, [debouncedSearch]);
+
+  useEffect(() => {
+    const loadInitial = async () => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const result = await gf.search("trending", { offset: 0, limit: 10 });
+        setGifs(result.data);
+      } catch (err) {
+        setError(err.message);
       } finally {
         setIsLoading(false);
       }
     };
-    fetchInitialGifs();
+    loadInitial();
   }, []);
 
   const handleGifClick = (gif, e) => {
     e.preventDefault();
-    console.log(gif);
-    let gifUrl = gif.images.original.url;
-    console.log(gifUrl);
-
-    dispatch(toggleGifModal({
-      value: true,
-      url: gifUrl,
-    }));
+    const gifUrl = gif.images.original.url;
+    dispatch(toggleGifModal({ value: true, url: gifUrl }));
   };
 
   return (
     <div ref={gridRef} className="w-full mt-3">
       <input
         type="text"
-        placeholder="Search for GIF.."
-        className="border dark:border-strokedark bg-transparent border-stroke rounded-md p-2 w-full mb-2 outline-none"
+        placeholder="Search for GIF..."
+        className="w-full rounded-xl border border-stroke bg-transparent p-2.5 text-sm outline-none focus:border-primary dark:border-strokedark dark:bg-form-input dark:text-white"
         value={value}
         onChange={(e) => {
           setValue(e.target.value);
-          debouncedFetchGifs();
+          debouncedSearch(e.target.value);
         }}
       />
 
-      {isLoading && <p>Loading GIFs...</p>}
-      {error && <p className="text-red">Error : {error} </p>}
+      {isLoading && (
+        <p className="py-2 text-center text-sm text-body dark:text-bodydark">
+          Loading GIFs...
+        </p>
+      )}
+      {error && (
+        <p className="py-2 text-center text-sm text-red">Error: {error}</p>
+      )}
 
-      <div className="h-48 overflow-auto no-scrollbar">
-        {gifs.length > 0 ?<Grid
-          width={gridRef.current?.offsetWidth}
-          columns={8}
-          gutter={6}
-          fetchGifs={fetchGifs}
-          key={value}
-          onGifClick={handleGifClick}
-          data={gifs}
-        /> : <div className="flex flex-col space-y-2 items-center justify-center h-full"> 
-            <MagnifyingGlassIcon size={48} weight="bold"></MagnifyingGlassIcon>
-            <span className="text-xl text-body dark:text-white font-semibold">Search for your GIFs.</span>
-            </div>}
+      <div className="mt-2 h-48 overflow-auto no-scrollbar rounded-xl">
+        {gifs.length > 0 ? (
+          <Grid
+            width={gridRef.current?.offsetWidth || 300}
+            columns={8}
+            gutter={6}
+            fetchGifs={fetchGifs}
+            key={value}
+            onGifClick={handleGifClick}
+            data={gifs}
+          />
+        ) : (
+          !isLoading && (
+            <div className="flex flex-col items-center justify-center h-full gap-2">
+              <MagnifyingGlassIcon
+                size={36}
+                weight="bold"
+                className="text-bodydark2"
+              />
+              <span className="text-sm font-semibold text-body dark:text-bodydark">
+                Search for your GIFs
+              </span>
+            </div>
+          )
+        )}
       </div>
     </div>
   );

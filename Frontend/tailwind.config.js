@@ -9,8 +9,8 @@ module.exports = {
   darkMode: 'class',
   theme: {
     fontFamily: {
-      satoshi: ['Manrope', 'system-ui', 'sans-serif'],
-      display: ['Space Grotesk', 'Manrope', 'system-ui', 'sans-serif'],
+      satoshi: ['Inter', 'system-ui', 'sans-serif'],
+      display: ['Space Grotesk', 'Inter', 'system-ui', 'sans-serif'],
     },
     screens: {
       sm: '640px',

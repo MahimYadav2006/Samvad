@@ -72,70 +72,93 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-[100dvh] px-4 py-6 sm:px-8 sm:py-10">
-      <div className="mx-auto grid min-h-[calc(100dvh-3rem)] w-full max-w-7xl overflow-hidden rounded-3xl border border-stroke/70 bg-white/80 shadow-2xl shadow-primary/10 backdrop-blur dark:border-strokedark dark:bg-boxdark/80 lg:grid-cols-[1.08fr_1fr]">
-        <section className="relative hidden overflow-hidden px-12 py-12 lg:flex lg:flex-col lg:justify-between">
-          <div className="absolute -left-16 top-[-120px] h-72 w-72 rounded-full bg-primary/25 blur-3xl" />
-          <div className="absolute right-[-120px] bottom-[-100px] h-72 w-72 rounded-full bg-sky-400/30 blur-3xl" />
+    <div className="animate-page-in relative flex min-h-[100dvh] items-center justify-center overflow-hidden px-4 py-8 font-satoshi sm:px-8 sm:py-12">
+      {/* Background decorative blobs */}
+      <div className="pointer-events-none absolute -left-32 -top-32 h-[420px] w-[420px] rounded-full bg-primary/[0.07] blur-[100px]" />
+      <div className="pointer-events-none absolute -bottom-40 -right-32 h-[380px] w-[380px] rounded-full bg-sky-400/[0.09] blur-[100px]" />
+      <div className="pointer-events-none absolute left-1/2 top-1/2 h-[300px] w-[300px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary/[0.04] blur-[80px]" />
 
-          <div className="relative z-10">
+      {/* Main card */}
+      <div className="relative z-10 grid w-full max-w-[1080px] overflow-hidden rounded-2xl border border-white/60 bg-white/70 shadow-xl shadow-black/[0.04] backdrop-blur-xl dark:border-strokedark/60 dark:bg-boxdark/70 dark:shadow-black/20 lg:grid-cols-[1.05fr_1fr]">
+
+        {/* ── Left: Hero Section (hidden on mobile) ── */}
+        <section className="relative hidden overflow-hidden lg:flex lg:flex-col">
+          {/* Inner gradient background */}
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/[0.06] via-transparent to-sky-400/[0.06]" />
+          <div className="absolute -left-20 -top-20 h-56 w-56 rounded-full bg-primary/20 blur-[80px]" />
+          <div className="absolute -bottom-16 -right-16 h-52 w-52 rounded-full bg-sky-400/20 blur-[80px]" />
+
+          {/* Content */}
+          <div className="relative z-10 flex h-full flex-col justify-between p-10">
             <Logo />
-          </div>
 
-          <div className="relative z-10 space-y-8">
-            <div>
-              <p className="mb-3 inline-flex items-center rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-xs font-bold uppercase tracking-[0.2em] text-primary">
-                Welcome Back
-              </p>
-              <h1 className="font-display text-4xl font-bold leading-tight text-black dark:text-white">
-                Continue the conversation
-                <br />
-                on Samvad
-              </h1>
-              <p className="mt-4 max-w-lg text-sm text-body dark:text-bodydark">
-                Your messages, calls, media and presence, now in a cleaner and
-                faster experience built for both desktop and mobile.
-              </p>
+            <div className="space-y-7">
+              <div>
+                <span className="mb-3.5 inline-flex items-center rounded-full border border-primary/15 bg-primary/[0.08] px-3 py-1 text-[11px] font-bold uppercase tracking-[0.18em] text-primary">
+                  Welcome Back
+                </span>
+                <h1 className="font-display text-[2.1rem] font-bold leading-[1.2] tracking-tight text-black dark:text-white">
+                  Continue the
+                  <br />
+                  conversation
+                </h1>
+                <p className="mt-3.5 max-w-sm text-[13px] leading-relaxed text-body dark:text-bodydark">
+                  Your messages, calls, and media -- all in one place.
+                  Pick up right where you left off.
+                </p>
+              </div>
+
+              <div className="space-y-2.5">
+                {highlights.map((item) => (
+                  <div
+                    key={item.label}
+                    className="flex items-center gap-3 rounded-xl border border-stroke/50 bg-white/60 px-4 py-3 backdrop-blur-sm dark:border-strokedark/50 dark:bg-boxdark-2/50"
+                  >
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                      {item.icon}
+                    </span>
+                    <span className="text-[13px] font-semibold text-black dark:text-white">
+                      {item.label}
+                    </span>
+                  </div>
+                ))}
+              </div>
             </div>
 
-            <div className="space-y-3">
-              {highlights.map((item) => (
-                <div
-                  key={item.label}
-                  className="flex items-center gap-3 rounded-2xl border border-stroke/70 bg-white/70 px-4 py-3 text-sm dark:border-strokedark dark:bg-boxdark-2/70"
-                >
-                  <span className="rounded-lg bg-primary/15 p-1.5 text-primary">
-                    {item.icon}
-                  </span>
-                  <span className="font-semibold text-black dark:text-white">
-                    {item.label}
-                  </span>
-                </div>
-              ))}
-            </div>
+            <p className="mt-8 text-[11px] text-body/60 dark:text-bodydark/40">
+              Samvad &mdash; Real-time messaging
+            </p>
           </div>
         </section>
 
-        <section className="flex items-center justify-center p-5 sm:p-8 lg:p-12">
-          <div className="w-full max-w-md rounded-3xl border border-stroke/70 bg-white p-6 shadow-xl dark:border-strokedark dark:bg-boxdark-2 sm:p-8">
-            <div className="mb-7">
-              <div className="mb-5 lg:hidden">
-                <Logo />
-              </div>
-              <p className="text-xs font-bold uppercase tracking-[0.2em] text-primary">
+        {/* ── Right: Login Form ── */}
+        <section className="flex items-center justify-center border-l-0 p-6 sm:p-10 lg:border-l lg:border-stroke/40 lg:p-12 dark:lg:border-strokedark/40">
+          <div className="w-full max-w-sm">
+
+            {/* Mobile logo */}
+            <div className="mb-6 lg:hidden">
+              <Logo />
+            </div>
+
+            {/* Header */}
+            <div className="mb-8">
+              <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-primary">
                 Start Connecting
               </p>
-              <h2 className="mt-2 font-display text-3xl font-bold text-black dark:text-white">
+              <h2 className="mt-2 font-display text-[1.75rem] font-bold tracking-tight text-black dark:text-white">
                 Sign In
               </h2>
-              <p className="mt-2 text-sm text-body dark:text-bodydark">
+              <p className="mt-1.5 text-[13px] leading-relaxed text-body dark:text-bodydark">
                 Login to chat with your friends and continue where you left off.
               </p>
             </div>
 
+            {/* Form */}
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+
+              {/* Email field */}
               <div>
-                <label className="mb-2 block text-sm font-semibold text-black dark:text-white">
+                <label className="mb-2 block text-[13px] font-semibold text-black dark:text-white">
                   Email
                 </label>
                 <div className="relative">
@@ -143,14 +166,14 @@ export default function Login() {
                     type="email"
                     {...register("email")}
                     placeholder="you@example.com"
-                    className={`w-full rounded-xl border bg-transparent py-3.5 pl-4 pr-11 text-black dark:text-white ${
+                    className={`w-full rounded-xl border bg-white/50 py-3 pl-4 pr-11 text-[13px] text-black outline-none backdrop-blur-sm transition-colors dark:bg-boxdark-2/50 dark:text-white ${
                       errors.email
                         ? "border-red focus:border-red"
-                        : "border-stroke focus:border-primary dark:border-form-strokedark dark:focus:border-primary"
+                        : "border-stroke/70 hover:border-stroke focus:border-primary dark:border-form-strokedark/70 dark:hover:border-form-strokedark dark:focus:border-primary"
                     }`}
                   />
-                  <span className="absolute right-4 top-1/2 -translate-y-1/2 text-bodydark2">
-                    <EnvelopeSimpleIcon size={20} />
+                  <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-bodydark2">
+                    <EnvelopeSimpleIcon size={18} />
                   </span>
                 </div>
                 {errors.email && (
@@ -160,8 +183,9 @@ export default function Login() {
                 )}
               </div>
 
+              {/* Password field */}
               <div>
-                <label className="mb-2 block text-sm font-semibold text-black dark:text-white">
+                <label className="mb-2 block text-[13px] font-semibold text-black dark:text-white">
                   Password
                 </label>
                 <div className="relative">
@@ -169,14 +193,14 @@ export default function Login() {
                     type="password"
                     {...register("password")}
                     placeholder="Enter your password"
-                    className={`w-full rounded-xl border bg-transparent py-3.5 pl-4 pr-11 text-black dark:text-white ${
+                    className={`w-full rounded-xl border bg-white/50 py-3 pl-4 pr-11 text-[13px] text-black outline-none backdrop-blur-sm transition-colors dark:bg-boxdark-2/50 dark:text-white ${
                       errors.password
                         ? "border-red focus:border-red"
-                        : "border-stroke focus:border-primary dark:border-form-strokedark dark:focus:border-primary"
+                        : "border-stroke/70 hover:border-stroke focus:border-primary dark:border-form-strokedark/70 dark:hover:border-form-strokedark dark:focus:border-primary"
                     }`}
                   />
-                  <span className="absolute right-4 top-1/2 -translate-y-1/2 text-bodydark2">
-                    <LockIcon size={20} />
+                  <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-bodydark2">
+                    <LockIcon size={18} />
                   </span>
                 </div>
                 {errors.password && (
@@ -186,19 +210,30 @@ export default function Login() {
                 )}
               </div>
 
+              {/* Sign In button */}
               <button
                 type="submit"
                 disabled={isSubmitting || isLoading}
-                className="w-full rounded-xl bg-primary px-4 py-3.5 text-sm font-bold text-white shadow-lg shadow-primary/25 hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-70"
+                className="w-full rounded-xl bg-gradient-to-r from-primary to-primary/90 px-4 py-3 text-[13px] font-bold text-white shadow-lg shadow-primary/20 transition-all hover:shadow-xl hover:shadow-primary/25 hover:brightness-110 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:shadow-lg disabled:hover:brightness-100"
               >
                 {isSubmitting || isLoading ? "Signing in..." : "Sign In"}
               </button>
 
+              {/* Divider */}
+              <div className="flex items-center gap-3">
+                <div className="h-px flex-1 bg-stroke/60 dark:bg-strokedark/60" />
+                <span className="text-[11px] font-medium text-body/70 dark:text-bodydark/50">
+                  or
+                </span>
+                <div className="h-px flex-1 bg-stroke/60 dark:bg-strokedark/60" />
+              </div>
+
+              {/* Google button */}
               <button
                 type="button"
                 onClick={handleGoogleSignIn}
                 disabled={isSubmitting || isLoading}
-                className="flex w-full items-center justify-center gap-3 rounded-xl border border-stroke bg-gray-2 px-4 py-3.5 text-sm font-semibold text-black hover:border-primary/50 hover:bg-primary/5 dark:border-strokedark dark:bg-meta-4 dark:text-white disabled:cursor-not-allowed disabled:opacity-70"
+                className="flex w-full items-center justify-center gap-2.5 rounded-xl border border-stroke/70 bg-white/60 px-4 py-3 text-[13px] font-semibold text-black backdrop-blur-sm transition-all hover:border-primary/30 hover:bg-primary/[0.03] active:scale-[0.98] dark:border-strokedark/70 dark:bg-meta-4/50 dark:text-white dark:hover:border-primary/30 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 <svg
                   width="18"
@@ -236,7 +271,8 @@ export default function Login() {
                 </span>
               </button>
 
-              <p className="pt-1 text-center text-sm text-body dark:text-bodydark">
+              {/* Sign up link */}
+              <p className="pt-1 text-center text-[13px] text-body dark:text-bodydark">
                 Don&apos;t have an account?{" "}
                 <Link to="/auth/signup" className="font-semibold text-primary hover:underline">
                   Sign up

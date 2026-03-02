@@ -7,6 +7,7 @@ import {
   MicrophoneIcon,
   CaretLeftIcon,
   UserCircleIcon,
+  ChatCircleTextIcon,
 } from "@phosphor-icons/react";
 import Dropdown from "../../components/Dropdown";
 import EmojiPicker from "../../components/EmojiPicker";
@@ -204,22 +205,22 @@ function Inbox({ otherPerson, onBackToList, className = "" }) {
   return (
     <div className={`relative h-full min-w-0 w-full ${className}`}>
       <div className="flex h-full min-w-0 w-full flex-col bg-white/30 dark:bg-boxdark/30">
-          <header className="flex items-center justify-between border-b border-stroke/70 px-3 py-3 md:px-5 md:py-4 dark:border-strokedark/70">
-            <div className="flex min-w-0 items-center gap-3">
+          <header className="flex items-center justify-between border-b border-stroke/50 bg-white/50 px-3 py-2.5 backdrop-blur-sm dark:border-strokedark/40 dark:bg-boxdark/50 md:px-5 md:py-3">
+            <div className="flex min-w-0 items-center gap-2.5">
               <button
                 type="button"
                 onClick={onBackToList}
-                className="flex h-9 w-9 items-center justify-center rounded-xl border border-stroke bg-white text-body dark:border-strokedark dark:bg-boxdark md:hidden"
+                className="flex h-8 w-8 items-center justify-center rounded-lg text-body/70 transition-colors hover:bg-gray-2 dark:text-bodydark/60 dark:hover:bg-meta-4/50 md:hidden"
               >
-                <CaretLeftIcon size={18} />
+                <CaretLeftIcon size={18} weight="bold" />
               </button>
               <button
                 type="button"
                 onClick={() => setIsProfileOpen(true)}
                 disabled={!oppositeUser || !oppositeUser._id}
-                className="flex min-w-0 items-center gap-3 text-left disabled:opacity-80"
+                className="flex min-w-0 items-center gap-2.5 text-left transition-opacity disabled:opacity-60"
               >
-                <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-2xl">
+                <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-xl">
                   <img
                     src={oppositeUser.avatar || User01}
                     alt="avatar"
@@ -227,72 +228,62 @@ function Inbox({ otherPerson, onBackToList, className = "" }) {
                   />
                   {oppositeUser.name && (
                     `${oppositeUser.status || ""}`.toLowerCase() === "online" ? (
-                      <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-white dark:border-boxdark">
-                        <span className="absolute inset-0 animate-ping rounded-full bg-success opacity-40" />
+                      <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border-[1.5px] border-white dark:border-boxdark">
                         <span className="absolute inset-0 rounded-full bg-success" />
                       </span>
                     ) : (
-                      <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-white bg-graydark dark:border-boxdark" />
+                      <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border-[1.5px] border-white bg-body/30 dark:border-boxdark dark:bg-bodydark/30" />
                     )
                   )}
                 </div>
                 <div className="min-w-0">
-                  <h5 className="truncate text-sm font-bold text-black dark:text-white md:text-base">
+                  <h5 className="truncate text-sm font-semibold text-black dark:text-white">
                     {oppositeUser.name || "Select a chat"}
                   </h5>
-                  <div className="flex items-center gap-1.5">
-                    {oppositeUser.name && (
-                      <span
-                        className={`inline-block h-2 w-2 rounded-full ${
-                          `${oppositeUser.status || ""}`.toLowerCase() === "online"
-                            ? "bg-success animate-pulse"
-                            : "bg-graydark"
-                        }`}
-                      />
-                    )}
-                    <p className={`text-xs font-medium ${
-                      `${oppositeUser.status || ""}`.toLowerCase() === "online"
+                  <p className={`text-[11px] font-medium ${
+                    isOppositeUserTyping
+                      ? "text-primary"
+                      : `${oppositeUser.status || ""}`.toLowerCase() === "online"
                         ? "text-success"
-                        : "text-body dark:text-bodydark"
-                    }`}>
-                      {isOppositeUserTyping
-                        ? "typing..."
-                        : `${oppositeUser.status || "Offline"}`}
-                    </p>
-                  </div>
+                        : "text-body/60 dark:text-bodydark/50"
+                  }`}>
+                    {isOppositeUserTyping
+                      ? "typing..."
+                      : `${oppositeUser.status || "Offline"}`}
+                  </p>
                 </div>
               </button>
             </div>
 
-            <div className="relative flex items-center gap-1.5 md:gap-2">
+            <div className="relative flex items-center gap-1">
               <button
-                onClick={() => setIsProfileOpen(true)}
-                className="flex h-9 w-9 items-center justify-center rounded-xl border border-stroke bg-white text-body hover:border-primary hover:text-primary disabled:opacity-50 dark:border-strokedark dark:bg-boxdark-2 dark:text-bodydark md:h-10 md:w-10"
-                title="View profile"
+                onClick={handleToggleAudioCall}
+                className="flex h-8 w-8 items-center justify-center rounded-lg text-body/50 transition-colors hover:bg-gray-2 hover:text-primary disabled:opacity-40 dark:text-bodydark/40 dark:hover:bg-meta-4/50 md:h-9 md:w-9"
+                title="Audio call"
                 disabled={!oppositeUser || !oppositeUser._id}
                 type="button"
               >
-                <UserCircleIcon size={18} />
+                <PhoneCallIcon size={17} />
               </button>
 
               <button
                 onClick={handleToggleVideoCall}
-                className="flex h-9 w-9 items-center justify-center rounded-xl border border-stroke bg-white text-body hover:border-primary hover:text-primary disabled:opacity-50 dark:border-strokedark dark:bg-boxdark-2 dark:text-bodydark md:h-10 md:w-10"
-                title="Start Video Call"
+                className="flex h-8 w-8 items-center justify-center rounded-lg text-body/50 transition-colors hover:bg-gray-2 hover:text-primary disabled:opacity-40 dark:text-bodydark/40 dark:hover:bg-meta-4/50 md:h-9 md:w-9"
+                title="Video call"
                 disabled={!oppositeUser || !oppositeUser._id}
                 type="button"
               >
-                <VideoCameraIcon size={18} />
+                <VideoCameraIcon size={17} />
               </button>
 
               <button
-                onClick={handleToggleAudioCall}
-                className="flex h-9 w-9 items-center justify-center rounded-xl border border-stroke bg-white text-body hover:border-primary hover:text-primary disabled:opacity-50 dark:border-strokedark dark:bg-boxdark-2 dark:text-bodydark md:h-10 md:w-10"
-                title="Start Audio Call"
+                onClick={() => setIsProfileOpen(true)}
+                className="flex h-8 w-8 items-center justify-center rounded-lg text-body/50 transition-colors hover:bg-gray-2 hover:text-primary disabled:opacity-40 dark:text-bodydark/40 dark:hover:bg-meta-4/50 md:h-9 md:w-9"
+                title="View profile"
                 disabled={!oppositeUser || !oppositeUser._id}
                 type="button"
               >
-                <PhoneCallIcon size={18} />
+                <UserCircleIcon size={17} />
               </button>
 
               <Dropdown />
@@ -304,19 +295,24 @@ function Inbox({ otherPerson, onBackToList, className = "" }) {
             className="fancy-scrollbar no-scrollbar flex-1 space-y-3 overflow-y-auto px-3 py-4 md:px-6 md:py-6"
           >
             {!hasConversation && (
-              <div className="mx-auto mt-12 max-w-md rounded-2xl border border-dashed border-stroke px-6 py-8 text-center dark:border-strokedark">
-                <p className="text-sm font-semibold text-black dark:text-white">
-                  Select a conversation to start chatting
+              <div className="flex h-full flex-col items-center justify-center px-6 text-center">
+                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/8 dark:bg-primary/10">
+                  <ChatCircleTextIcon size={28} weight="duotone" className="text-primary/70" />
+                </div>
+                <p className="mt-4 text-sm font-semibold text-black dark:text-white">
+                  Select a conversation
                 </p>
-                <p className="mt-1 text-xs text-body dark:text-bodydark">
-                  Your messages will appear here in real time.
+                <p className="mt-1 max-w-[240px] text-xs text-body/60 dark:text-bodydark/50">
+                  Choose someone from the list to start chatting.
                 </p>
               </div>
             )}
 
             {hasConversation && currMessages && currMessages.length === 0 && (
-              <div className="mx-auto mt-10 max-w-sm rounded-2xl bg-gray-2 px-4 py-3 text-center text-sm font-semibold text-body dark:bg-meta-4 dark:text-bodydark">
-                Send a message to start this conversation.
+              <div className="flex h-full flex-col items-center justify-center px-6 text-center">
+                <p className="rounded-full bg-gray-2/80 px-4 py-1.5 text-xs font-medium text-body/60 dark:bg-meta-4/50 dark:text-bodydark/50">
+                  Send a message to start this conversation
+                </p>
               </div>
             )}
 
@@ -389,15 +385,16 @@ function Inbox({ otherPerson, onBackToList, className = "" }) {
             {isOppositeUserTyping && <TypingIndicator />}
           </div>
 
-          <div className="border-t border-stroke/70 bg-white/80 px-3 py-3 dark:border-strokedark/70 dark:bg-boxdark-2/70 md:px-6 md:py-4">
+          <div className="border-t border-stroke/50 bg-white/60 px-3 py-2.5 backdrop-blur-sm dark:border-strokedark/40 dark:bg-boxdark-2/60 md:px-5 md:py-3">
+            {gifOpen && <Giphy />}
             <form
               onSubmit={(e) => {
                 e.preventDefault();
                 handleSendMessage();
               }}
-              className="space-y-3"
+              className="flex items-end gap-2"
             >
-              <div className="relative">
+              <div className="relative min-w-0 flex-1">
                 <input
                   type="text"
                   placeholder="Type your message..."
@@ -417,16 +414,16 @@ function Inbox({ otherPerson, onBackToList, className = "" }) {
                       handleSendMessage();
                     }
                   }}
-                  className="h-12 w-full rounded-2xl border border-stroke bg-white py-2.5 pl-4 pr-36 text-sm text-black placeholder-body dark:border-form-strokedark dark:bg-form-input dark:text-white md:h-13"
+                  className="h-11 w-full rounded-xl border border-stroke/70 bg-white py-2 pl-4 pr-32 text-sm text-black placeholder-body/60 outline-none transition-colors focus:border-primary/50 dark:border-strokedark/60 dark:bg-form-input dark:text-white dark:placeholder-bodydark/40 md:h-12 md:pr-36"
                 />
 
-                <div className="absolute right-3 top-1/2 flex -translate-y-1/2 items-center gap-2 text-bodydark2">
-                  <button className="hover:text-primary" type="button" onClick={handleMicClick}>
-                    <MicrophoneIcon size={20} />
+                <div className="absolute right-2.5 top-1/2 flex -translate-y-1/2 items-center gap-1 text-body/50 dark:text-bodydark/40 md:gap-1.5">
+                  <button className="rounded-lg p-1.5 transition-colors hover:bg-gray-2 hover:text-primary dark:hover:bg-meta-4/50" type="button" onClick={handleMicClick} title="Voice message">
+                    <MicrophoneIcon size={18} />
                   </button>
                   <Attachment />
-                  <button className="hover:text-primary" type="button" onClick={handleToggleGif}>
-                    <GifIcon size={20} />
+                  <button className="rounded-lg p-1.5 transition-colors hover:bg-gray-2 hover:text-primary dark:hover:bg-meta-4/50" type="button" onClick={handleToggleGif} title="Send GIF">
+                    <GifIcon size={18} />
                   </button>
                   <EmojiPicker
                     onEmojiSelect={(emoji) => {
@@ -438,13 +435,12 @@ function Inbox({ otherPerson, onBackToList, className = "" }) {
 
               <button
                 type="submit"
-                className="flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 text-sm font-bold text-white shadow-lg shadow-primary/20 hover:bg-primary/90 md:h-12"
+                disabled={!messageText.trim()}
+                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary text-white shadow-md shadow-primary/20 transition-all hover:bg-primary/90 hover:shadow-lg hover:shadow-primary/25 disabled:opacity-40 disabled:shadow-none md:h-12 md:w-12"
               >
                 <PaperPlaneTiltIcon size={18} weight="bold" />
-                Send
               </button>
             </form>
-            {gifOpen && <Giphy />}
           </div>
         </div>
 
@@ -453,10 +449,10 @@ function Inbox({ otherPerson, onBackToList, className = "" }) {
           <button
             type="button"
             aria-label="Close profile panel"
-            className="absolute inset-0 z-20 bg-black/30 backdrop-blur-[1px]"
+            className="absolute inset-0 z-20 bg-black/20 backdrop-blur-[2px]"
             onClick={() => setIsProfileOpen(false)}
           />
-          <aside className="absolute bottom-3 right-3 top-3 z-30 w-[min(92vw,360px)] overflow-hidden rounded-3xl border border-stroke/70 shadow-2xl shadow-black/20 dark:border-strokedark/70">
+          <aside className="absolute bottom-2 right-2 top-2 z-30 w-[min(90vw,340px)] overflow-hidden rounded-2xl border border-stroke/50 bg-white shadow-2xl shadow-black/10 dark:border-strokedark/40 dark:bg-boxdark">
             <UserInfo handleToggleUserInfo={() => setIsProfileOpen(false)} />
           </aside>
         </>

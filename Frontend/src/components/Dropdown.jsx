@@ -27,8 +27,8 @@ function Dropdown(){
 
     return (
         <>
-            <button type="button" className="flex h-9 w-9 items-center justify-center rounded-xl border border-stroke bg-white text-body hover:border-primary hover:text-primary dark:border-strokedark dark:bg-boxdark-2 dark:text-bodydark md:h-10 md:w-10" ref={trigger} onClick={()=> setDropdownOpen((prev)=> !prev)}>
-                <DotsThreeIcon size={24}></DotsThreeIcon>
+            <button type="button" className="flex h-8 w-8 items-center justify-center rounded-lg text-body/50 transition-colors hover:bg-gray-2 hover:text-primary dark:text-bodydark/40 dark:hover:bg-meta-4/50 md:h-9 md:w-9" ref={trigger} onClick={()=> setDropdownOpen((prev)=> !prev)}>
+                <DotsThreeIcon size={20}></DotsThreeIcon>
             </button>
             <div ref={dropdown} onFocus={()=> setDropdownOpen(true)} onBlur={()=> setDropdownOpen(false)} className={`absolute right-0 top-[110%] z-40 w-36 space-y-1 rounded-xl border border-stroke bg-white p-1.5 shadow-xl dark:border-strokedark dark:bg-boxdark ${dropdownOpen ? "block" : "hidden"}`}>
                 <button type="button" className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-semibold hover:bg-gray dark:hover:bg-meta-4">

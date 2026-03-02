@@ -35,32 +35,32 @@ function Attachment() {
   return (
     <>
       <button
-        className="text-bodydark2 hover:text-primary"
+        className="rounded-lg p-1.5 transition-colors hover:bg-gray-2 hover:text-primary dark:hover:bg-meta-4/50"
         ref={trigger}
         onClick={(e) =>{
             e.preventDefault();
             setDropdownOpen((prev) => !prev)
         }}
       >
-        <PaperclipIcon size={20}></PaperclipIcon>
+        <PaperclipIcon size={18}></PaperclipIcon>
       </button>
       <div
         ref={dropdown}
         onFocus={() => setDropdownOpen(true)}
         onBlur={() => setDropdownOpen(false)}
-        className={`absolute right-0 -top-24 z-40 space-y-1 rounded-xl border border-stroke bg-white p-1.5 shadow-xl dark:border-strokedark dark:bg-boxdark ${
+        className={`absolute right-0 -top-[6.5rem] z-40 space-y-0.5 rounded-xl border border-stroke/60 bg-white p-1 shadow-xl shadow-black/[0.08] dark:border-strokedark/50 dark:bg-boxdark ${
           dropdownOpen ? "block" : "hidden"
         }`}
         onClick={(e)=> e.preventDefault()}
       >
-        <button className="flex w-54 items-center gap-2 rounded-lg px-4 py-2 text-left text-sm font-semibold hover:bg-gray dark:hover:bg-meta-4" onClick={()=> dispatch(toggleMediaModal(true))}>
-          <ImageIcon size={20}></ImageIcon>
+        <button className="flex w-48 items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium text-body/80 transition-colors hover:bg-gray-2 hover:text-black dark:text-bodydark/70 dark:hover:bg-meta-4/50 dark:hover:text-white" onClick={()=> dispatch(toggleMediaModal(true))}>
+          <ImageIcon size={17}></ImageIcon>
           Images & Videos
         </button>
 
-        <button className="flex w-full items-center gap-2 rounded-lg px-4 py-2 text-left text-sm font-semibold hover:bg-gray dark:hover:bg-meta-4" onClick={()=> dispatch(toggleDocumentModal(true))}>
-          <FileIcon size={20}></FileIcon>
-          Files and documents
+        <button className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium text-body/80 transition-colors hover:bg-gray-2 hover:text-black dark:text-bodydark/70 dark:hover:bg-meta-4/50 dark:hover:text-white" onClick={()=> dispatch(toggleDocumentModal(true))}>
+          <FileIcon size={17}></FileIcon>
+          Documents
         </button>
       </div>
     </>

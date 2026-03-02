@@ -80,10 +80,19 @@ export default function Signup() {
   };
 
   return (
-    <div className="min-h-[100dvh] px-4 py-6 sm:px-8 sm:py-10">
-      <div className="mx-auto grid min-h-[calc(100dvh-3rem)] w-full max-w-7xl overflow-hidden rounded-3xl border border-stroke/70 bg-white/80 shadow-2xl shadow-primary/10 backdrop-blur dark:border-strokedark dark:bg-boxdark/80 lg:grid-cols-[1fr_1.08fr]">
+    <div className="animate-page-in relative min-h-[100dvh] bg-gradient-to-br from-slate-50 via-white to-sky-50/40 px-4 py-6 font-satoshi dark:from-boxdark-2 dark:via-boxdark dark:to-boxdark-2 sm:px-8 sm:py-10">
+      {/* Background decorative blobs */}
+      <div className="pointer-events-none fixed inset-0 overflow-hidden">
+        <div className="absolute -left-32 -top-32 h-[420px] w-[420px] rounded-full bg-primary/[0.07] blur-[100px]" />
+        <div className="absolute -bottom-40 -right-40 h-[380px] w-[380px] rounded-full bg-sky-400/[0.08] blur-[100px]" />
+        <div className="absolute left-1/2 top-1/2 h-[300px] w-[300px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary/[0.04] blur-[80px]" />
+      </div>
+
+      <div className="relative mx-auto grid min-h-[calc(100dvh-3rem)] w-full max-w-7xl overflow-hidden rounded-3xl border border-stroke/60 bg-white/70 shadow-2xl shadow-primary/[0.08] backdrop-blur-xl dark:border-strokedark/80 dark:bg-boxdark/70 lg:grid-cols-[1fr_1.08fr]">
+
+        {/* Left: Signup form */}
         <section className="flex items-center justify-center p-5 sm:p-8 lg:p-12">
-          <div className="w-full max-w-md rounded-3xl border border-stroke/70 bg-white p-6 shadow-xl dark:border-strokedark dark:bg-boxdark-2 sm:p-8">
+          <div className="w-full max-w-md rounded-3xl border border-stroke/50 bg-white/90 p-6 shadow-xl shadow-black/[0.03] backdrop-blur-sm dark:border-strokedark/60 dark:bg-boxdark-2/90 sm:p-8">
             <div className="mb-7">
               <div className="mb-5 lg:hidden">
                 <Logo />
@@ -94,12 +103,13 @@ export default function Signup() {
               <h2 className="mt-2 font-display text-3xl font-bold text-black dark:text-white">
                 Sign Up
               </h2>
-              <p className="mt-2 text-sm text-body dark:text-bodydark">
+              <p className="mt-2 text-sm leading-relaxed text-body dark:text-bodydark">
                 Join Samvad and start your modern chat experience.
               </p>
             </div>
 
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4.5">
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+              {/* Name */}
               <div>
                 <label className="mb-2 block text-sm font-semibold text-black dark:text-white">
                   Name
@@ -109,14 +119,14 @@ export default function Signup() {
                     type="text"
                     {...register("name")}
                     placeholder="Your full name"
-                    className={`w-full rounded-xl border bg-transparent py-3.5 pl-4 pr-11 text-black dark:text-white ${
+                    className={`w-full rounded-xl border bg-white/60 py-3 pl-4 pr-11 text-sm text-black outline-none transition-all duration-200 placeholder:text-bodydark2/60 focus:ring-2 focus:ring-primary/20 dark:bg-boxdark/60 dark:text-white dark:placeholder:text-bodydark/40 ${
                       errors.name
                         ? "border-red focus:border-red"
-                        : "border-stroke focus:border-primary dark:border-form-strokedark dark:focus:border-primary"
+                        : "border-stroke/80 focus:border-primary dark:border-form-strokedark dark:focus:border-primary"
                     }`}
                   />
-                  <span className="absolute right-4 top-1/2 -translate-y-1/2 text-bodydark2">
-                    <UserIcon size={20} />
+                  <span className="absolute right-4 top-1/2 -translate-y-1/2 text-bodydark2/70">
+                    <UserIcon size={18} />
                   </span>
                 </div>
                 {errors.name && (
@@ -126,6 +136,7 @@ export default function Signup() {
                 )}
               </div>
 
+              {/* Email */}
               <div>
                 <label className="mb-2 block text-sm font-semibold text-black dark:text-white">
                   Email
@@ -135,14 +146,14 @@ export default function Signup() {
                     type="email"
                     {...register("email")}
                     placeholder="you@example.com"
-                    className={`w-full rounded-xl border bg-transparent py-3.5 pl-4 pr-11 text-black dark:text-white ${
+                    className={`w-full rounded-xl border bg-white/60 py-3 pl-4 pr-11 text-sm text-black outline-none transition-all duration-200 placeholder:text-bodydark2/60 focus:ring-2 focus:ring-primary/20 dark:bg-boxdark/60 dark:text-white dark:placeholder:text-bodydark/40 ${
                       errors.email
                         ? "border-red focus:border-red"
-                        : "border-stroke focus:border-primary dark:border-form-strokedark dark:focus:border-primary"
+                        : "border-stroke/80 focus:border-primary dark:border-form-strokedark dark:focus:border-primary"
                     }`}
                   />
-                  <span className="absolute right-4 top-1/2 -translate-y-1/2 text-bodydark2">
-                    <EnvelopeSimpleIcon size={20} />
+                  <span className="absolute right-4 top-1/2 -translate-y-1/2 text-bodydark2/70">
+                    <EnvelopeSimpleIcon size={18} />
                   </span>
                 </div>
                 {errors.email && (
@@ -152,6 +163,7 @@ export default function Signup() {
                 )}
               </div>
 
+              {/* Password */}
               <div>
                 <label className="mb-2 block text-sm font-semibold text-black dark:text-white">
                   Password
@@ -161,14 +173,14 @@ export default function Signup() {
                     type="password"
                     {...register("password")}
                     placeholder="Choose a password"
-                    className={`w-full rounded-xl border bg-transparent py-3.5 pl-4 pr-11 text-black dark:text-white ${
+                    className={`w-full rounded-xl border bg-white/60 py-3 pl-4 pr-11 text-sm text-black outline-none transition-all duration-200 placeholder:text-bodydark2/60 focus:ring-2 focus:ring-primary/20 dark:bg-boxdark/60 dark:text-white dark:placeholder:text-bodydark/40 ${
                       errors.password
                         ? "border-red focus:border-red"
-                        : "border-stroke focus:border-primary dark:border-form-strokedark dark:focus:border-primary"
+                        : "border-stroke/80 focus:border-primary dark:border-form-strokedark dark:focus:border-primary"
                     }`}
                   />
-                  <span className="absolute right-4 top-1/2 -translate-y-1/2 text-bodydark2">
-                    <LockIcon size={20} />
+                  <span className="absolute right-4 top-1/2 -translate-y-1/2 text-bodydark2/70">
+                    <LockIcon size={18} />
                   </span>
                 </div>
                 {errors.password && (
@@ -178,6 +190,7 @@ export default function Signup() {
                 )}
               </div>
 
+              {/* Confirm Password */}
               <div>
                 <label className="mb-2 block text-sm font-semibold text-black dark:text-white">
                   Confirm Password
@@ -187,14 +200,14 @@ export default function Signup() {
                     type="password"
                     {...register("confirmPassword")}
                     placeholder="Re-enter password"
-                    className={`w-full rounded-xl border bg-transparent py-3.5 pl-4 pr-11 text-black dark:text-white ${
+                    className={`w-full rounded-xl border bg-white/60 py-3 pl-4 pr-11 text-sm text-black outline-none transition-all duration-200 placeholder:text-bodydark2/60 focus:ring-2 focus:ring-primary/20 dark:bg-boxdark/60 dark:text-white dark:placeholder:text-bodydark/40 ${
                       errors.confirmPassword
                         ? "border-red focus:border-red"
-                        : "border-stroke focus:border-primary dark:border-form-strokedark dark:focus:border-primary"
+                        : "border-stroke/80 focus:border-primary dark:border-form-strokedark dark:focus:border-primary"
                     }`}
                   />
-                  <span className="absolute right-4 top-1/2 -translate-y-1/2 text-bodydark2">
-                    <LockIcon size={20} />
+                  <span className="absolute right-4 top-1/2 -translate-y-1/2 text-bodydark2/70">
+                    <LockIcon size={18} />
                   </span>
                 </div>
                 {errors.confirmPassword && (
@@ -204,19 +217,28 @@ export default function Signup() {
                 )}
               </div>
 
+              {/* Submit */}
               <button
                 type="submit"
                 disabled={isSubmitting || isLoading}
-                className="w-full rounded-xl bg-primary px-4 py-3.5 text-sm font-bold text-white shadow-lg shadow-primary/25 hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-70"
+                className="w-full rounded-xl bg-gradient-to-r from-primary to-primary/90 px-4 py-3 text-sm font-bold text-white shadow-lg shadow-primary/25 transition-all duration-200 hover:shadow-xl hover:shadow-primary/30 hover:brightness-110 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-70 disabled:hover:shadow-lg"
               >
                 {isSubmitting || isLoading ? "Creating account..." : "Sign Up"}
               </button>
 
+              {/* Divider */}
+              <div className="relative flex items-center py-1">
+                <div className="flex-1 border-t border-stroke/60 dark:border-strokedark/60" />
+                <span className="px-3 text-xs font-medium text-bodydark2/70">or</span>
+                <div className="flex-1 border-t border-stroke/60 dark:border-strokedark/60" />
+              </div>
+
+              {/* Google */}
               <button
                 type="button"
                 onClick={handleGoogleSignup}
                 disabled={isSubmitting || isLoading}
-                className="flex w-full items-center justify-center gap-3 rounded-xl border border-stroke bg-gray-2 px-4 py-3.5 text-sm font-semibold text-black hover:border-primary/50 hover:bg-primary/5 dark:border-strokedark dark:bg-meta-4 dark:text-white disabled:cursor-not-allowed disabled:opacity-70"
+                className="flex w-full items-center justify-center gap-3 rounded-xl border border-stroke/80 bg-white px-4 py-3 text-sm font-semibold text-black transition-all duration-200 hover:border-primary/40 hover:bg-primary/[0.03] hover:shadow-sm active:scale-[0.98] dark:border-strokedark dark:bg-meta-4 dark:text-white dark:hover:border-primary/40 disabled:cursor-not-allowed disabled:opacity-70"
               >
                 <svg
                   width="18"
@@ -264,9 +286,12 @@ export default function Signup() {
           </div>
         </section>
 
+        {/* Right: Hero / branding panel */}
         <section className="relative hidden overflow-hidden px-12 py-12 lg:flex lg:flex-col lg:justify-between">
-          <div className="absolute left-[-130px] top-[-90px] h-72 w-72 rounded-full bg-sky-400/25 blur-3xl" />
-          <div className="absolute right-[-90px] bottom-[-120px] h-72 w-72 rounded-full bg-primary/25 blur-3xl" />
+          {/* Gradient blobs inside hero */}
+          <div className="absolute left-[-130px] top-[-90px] h-72 w-72 rounded-full bg-sky-400/20 blur-3xl" />
+          <div className="absolute bottom-[-120px] right-[-90px] h-72 w-72 rounded-full bg-primary/20 blur-3xl" />
+          <div className="absolute left-1/2 top-1/3 h-40 w-40 -translate-x-1/2 rounded-full bg-primary/10 blur-[60px]" />
 
           <div className="relative z-10 flex justify-end">
             <Logo />
@@ -282,7 +307,7 @@ export default function Signup() {
                 <br />
                 connect naturally
               </h1>
-              <p className="mt-4 max-w-lg text-sm text-body dark:text-bodydark">
+              <p className="mt-4 max-w-lg text-sm leading-relaxed text-body dark:text-bodydark">
                 Create your account once, verify quickly, and start conversations
                 with a refined messaging experience.
               </p>
@@ -292,9 +317,9 @@ export default function Signup() {
               {benefits.map((item) => (
                 <div
                   key={item.title}
-                  className="flex items-center gap-3 rounded-2xl border border-stroke/70 bg-white/70 px-4 py-3 text-sm dark:border-strokedark dark:bg-boxdark-2/70"
+                  className="flex items-center gap-3 rounded-2xl border border-stroke/50 bg-white/60 px-4 py-3 text-sm backdrop-blur-sm transition-colors duration-200 hover:bg-white/80 dark:border-strokedark/60 dark:bg-boxdark-2/60 dark:hover:bg-boxdark-2/80"
                 >
-                  <span className="rounded-lg bg-primary/15 p-1.5 text-primary">
+                  <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
                     {item.icon}
                   </span>
                   <span className="font-semibold text-black dark:text-white">

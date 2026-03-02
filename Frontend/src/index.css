@@ -1,55 +1,64 @@
-@import url("https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap");
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 html {
-  font-size: 13px;
+  font-size: 13.5px;
   scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 @layer base {
   :root {
-    --app-bg: #f5f7ff;
-    --app-bg-soft: #ecf3ff;
-    --surface: rgba(255, 255, 255, 0.86);
-    --surface-stroke: rgba(28, 36, 52, 0.08);
+    --app-bg: #f8f9fc;
+    --app-bg-soft: #eef2ff;
+    --surface: rgba(255, 255, 255, 0.92);
+    --surface-stroke: rgba(28, 36, 52, 0.06);
+    --msg-incoming: rgba(255, 255, 255, 0.95);
+    --msg-incoming-border: rgba(28, 36, 52, 0.05);
   }
 
   .dark {
-    --app-bg: #0f1729;
-    --app-bg-soft: #121f38;
-    --surface: rgba(26, 34, 44, 0.86);
-    --surface-stroke: rgba(226, 232, 240, 0.12);
+    --app-bg: #0c1220;
+    --app-bg-soft: #111827;
+    --surface: rgba(22, 30, 46, 0.92);
+    --surface-stroke: rgba(226, 232, 240, 0.08);
+    --msg-incoming: rgba(30, 41, 59, 0.85);
+    --msg-incoming-border: rgba(226, 232, 240, 0.06);
   }
 
   body {
     @apply relative z-1 min-h-screen font-satoshi text-base font-medium text-body antialiased;
     background:
-      radial-gradient(circle at 0% 0%, rgba(60, 80, 224, 0.16), transparent 35%),
-      radial-gradient(circle at 100% 0%, rgba(56, 189, 248, 0.16), transparent 35%),
+      radial-gradient(ellipse 80% 60% at 0% 0%, rgba(99, 102, 241, 0.12), transparent),
+      radial-gradient(ellipse 60% 50% at 100% 0%, rgba(56, 189, 248, 0.1), transparent),
+      radial-gradient(ellipse 50% 40% at 50% 100%, rgba(99, 102, 241, 0.06), transparent),
       linear-gradient(180deg, var(--app-bg), var(--app-bg-soft));
+    background-attachment: fixed;
   }
 
   * {
-    @apply selection:bg-primary/20 selection:text-black;
+    @apply selection:bg-primary/15 selection:text-black;
   }
 
   .dark * {
-    @apply selection:text-white;
+    @apply selection:bg-primary/25 selection:text-white;
   }
 
   button,
   input,
   textarea,
   select {
-    @apply transition-all duration-200;
+    @apply transition-all duration-200 ease-out;
   }
 
   input:focus,
   textarea:focus,
   select:focus {
-    @apply outline-none ring-2 ring-primary/15;
+    @apply outline-none;
+    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.12);
   }
 }
 
@@ -66,64 +75,84 @@ html {
   .surface-card {
     background: var(--surface);
     border: 1px solid var(--surface-stroke);
-    backdrop-filter: blur(10px);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
   }
 
   .fancy-scrollbar {
     scrollbar-width: thin;
-    scrollbar-color: rgba(100, 116, 139, 0.35) transparent;
+    scrollbar-color: rgba(100, 116, 139, 0.25) transparent;
   }
 
   .fancy-scrollbar::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
+    width: 6px;
+    height: 6px;
   }
 
   .fancy-scrollbar::-webkit-scrollbar-thumb {
-    background: rgba(100, 116, 139, 0.32);
+    background: rgba(100, 116, 139, 0.22);
     border-radius: 999px;
   }
+
+  .fancy-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(100, 116, 139, 0.36);
+  }
+
+  .msg-bubble-in {
+    background: var(--msg-incoming);
+    border: 1px solid var(--msg-incoming-border);
+  }
 }
+
+/* ── Page entrance animations ───────────────────────── */
+
+@keyframes page-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-page-in {
+  animation: page-fade-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* ── Typing indicator ───────────────────────────────── */
 
 .ticontainer .tidot {
   background-color: #90949c;
 }
 
 .tidot {
-  @apply inline-block h-[6px] w-[6px] rounded-full;
+  @apply inline-block h-[5px] w-[5px] rounded-full;
   animation: mercuryTypingAnimation 1.4s infinite ease-in-out;
 }
 
 @keyframes mercuryTypingAnimation {
   0% {
     transform: translateY(0px);
-    opacity: 0.4;
+    opacity: 0.35;
   }
   28% {
-    transform: translateY(-5px);
+    transform: translateY(-4px);
     opacity: 1;
   }
   44% {
     transform: translateY(0px);
-    opacity: 0.4;
+    opacity: 0.35;
   }
 }
 
-.tidot:nth-child(1) {
-  animation-delay: 0ms;
-}
-
-.tidot:nth-child(2) {
-  animation-delay: 150ms;
-}
-
-.tidot:nth-child(3) {
-  animation-delay: 300ms;
-}
+.tidot:nth-child(1) { animation-delay: 0ms; }
+.tidot:nth-child(2) { animation-delay: 150ms; }
+.tidot:nth-child(3) { animation-delay: 300ms; }
 
 /* ── Call UI Animations ─────────────────────────────── */
 
-/* Pulsating ring for incoming call avatar */
 @keyframes call-pulse-ring {
   0% {
     transform: scale(1);
@@ -149,14 +178,9 @@ html {
   animation-delay: 0.6s;
 }
 
-/* Audio call sound wave bars */
 @keyframes call-sound-wave {
-  0%, 100% {
-    height: 6px;
-  }
-  50% {
-    height: 24px;
-  }
+  0%, 100% { height: 6px; }
+  50% { height: 24px; }
 }
 
 .call-sound-bar {
@@ -172,7 +196,6 @@ html {
 .call-sound-bar:nth-child(4) { animation-delay: 0.45s; }
 .call-sound-bar:nth-child(5) { animation-delay: 0.6s; }
 
-/* Fade-in-up entrance for modals */
 @keyframes call-fade-in-up {
   from {
     opacity: 0;
@@ -188,7 +211,6 @@ html {
   animation: call-fade-in-up 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-/* Slide-up for call controls */
 @keyframes call-slide-up {
   from {
     opacity: 0;
@@ -205,10 +227,22 @@ html {
   opacity: 0;
 }
 
-/* Glass surface for call UI */
 .call-glass {
   background: rgba(0, 0, 0, 0.45);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* ── Subtle shimmer for loading states ──────────────── */
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.animate-shimmer {
+  background: linear-gradient(90deg, transparent 30%, rgba(255,255,255,0.08) 50%, transparent 70%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
 }

@@ -1,77 +1,93 @@
 import { useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { PaperPlaneTiltIcon, XIcon } from "@phosphor-icons/react";
-import { toggleDocumentModal, toggleMediaModal } from "../redux/slices/app";
+import { toggleDocumentModal } from "../redux/slices/app";
 import FileDropZone from "./FileDropZone";
 import { newDirectMessage } from "../redux/slices/chat";
-
-
 
 export default function DocumentPicker() {
   const modalRef = useRef(null);
   const dispatch = useDispatch();
   const { document: documenti } = useSelector((state) => state.app.modals);
-  const [fileData,setFileData] = useState({});
+  const [fileData, setFileData] = useState({});
   const [messageText, setMessageText] = useState("");
+  const user = useSelector((state) => state.auth.user);
 
   useEffect(() => {
     const keyHandler = (event) => {
       if (!documenti || event.key !== "Escape") return;
-      dispatch(toggleMediaModal(false));
+      dispatch(toggleDocumentModal(false));
     };
     document.addEventListener("keydown", keyHandler);
     return () => document.removeEventListener("keydown", keyHandler);
   }, [documenti, dispatch]);
-  const user = useSelector((state) => state.auth.user);
+
   const handleSendMessage = (e) => {
-      e.preventDefault();
-      if (!messageText.trim()) return;
-      dispatch(newDirectMessage({ content: messageText, author: user._id, media: null ,audioUrl: null, document:fileData ,type:null ,giphyUrl:null }));
-      setMessageText("");
-      dispatch(toggleDocumentModal(false));
-      setFileData({});
-      dispatch(toggleMediaModal(false));
+    e.preventDefault();
+    if (!fileData?.url) return;
+    dispatch(
+      newDirectMessage({
+        content: messageText,
+        author: user._id,
+        media: null,
+        audioUrl: null,
+        document: fileData,
+        type: null,
+        giphyUrl: null,
+      })
+    );
+    setMessageText("");
+    setFileData({});
+    dispatch(toggleDocumentModal(false));
   };
 
   return (
     <div
-      className={`fixed left-0 top-0 z-999999 flex h-full min-h-screen w-full items-center justify-center bg-black/90 px-4 py-5 ${
+      className={`fixed left-0 top-0 z-999999 flex h-full min-h-screen w-full items-center justify-center bg-black/60 backdrop-blur-sm px-4 py-5 ${
         documenti ? "block" : "hidden"
       }`}
     >
       <div
         ref={modalRef}
-        className="md:px-17.5 w-full max-w-142.5 rounded-lg bg-white dark:bg-boxdark md:py-8 px-8 py-12"
+        className="w-full max-w-142.5 rounded-2xl bg-white dark:bg-boxdark px-6 py-6 md:px-8 md:py-8 shadow-2xl"
       >
-            {/* Header */}
-        <div className="flex flex-row items-center justify-between mb-8 space-x-2">
-          <div className="text-md font-medium text-black dark:text-white">
-            Choose Documents to Send
-          </div>
+        <div className="flex items-center justify-between mb-5">
+          <h3 className="text-base font-bold text-black dark:text-white">
+            Send Document
+          </h3>
           <button
-            onClick={() => {
-              
-            }}
+            onClick={() => dispatch(toggleDocumentModal(false))}
+            className="flex h-7 w-7 items-center justify-center rounded-lg text-body/50 transition-colors hover:bg-gray-2 hover:text-black dark:text-bodydark/40 dark:hover:bg-meta-4/50 dark:hover:text-white"
           >
-            <XIcon onClick={()=> dispatch(toggleDocumentModal(false))}  size={24}></XIcon>
+            <XIcon size={16} />
           </button>
         </div>
 
-            {/* FilePicker */}
-            <FileDropZone  fileData={fileData} setFileData={setFileData} acceptedFiles=".pdf,.ppt,.doc,.docx,.xls,.xlsx,.txt,.csv,.fig" ></FileDropZone>
-            {/* MessageFooter */}
-        <div className="flex flex-row items-center space-x-2 justify-between mt-4">
+        <FileDropZone
+          fileData={fileData}
+          setFileData={setFileData}
+          acceptedFiles=".pdf,.ppt,.doc,.docx,.xls,.xlsx,.txt,.csv,.fig"
+        />
+
+        <form
+          onSubmit={handleSendMessage}
+          className="flex items-center gap-2 mt-4"
+        >
           <input
             type="text"
-            className="border rounded-lg hover:border-primary outline-none w-full p-2 border-stroke dark:border-strokedark bg-transparent dark:bg-form-input"
-            placeholder="Type your message.."
+            className="flex-1 rounded-xl border border-stroke/70 bg-white py-2.5 pl-4 pr-4 text-sm outline-none transition-colors focus:border-primary/50 dark:border-strokedark/60 dark:bg-form-input dark:text-white"
+            placeholder="Add a caption..."
             value={messageText}
             onChange={(e) => setMessageText(e.target.value)}
           />
-          <button className="p-2.5 border border-primary flex items-center justify-center rounded-lg bg-primary hover:bg-opacity-90 text-white">
-            <PaperPlaneTiltIcon size={20} weight="bold" onClick={handleSendMessage}></PaperPlaneTiltIcon>
+          <button
+            type="submit"
+            disabled={!fileData?.url}
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary text-white shadow-md shadow-primary/20 transition-all hover:bg-primary/90 disabled:opacity-40 disabled:shadow-none"
+          >
+            <PaperPlaneTiltIcon size={18} weight="bold" />
           </button>
-        </div>
+        </form>
       </div>
     </div>
   );

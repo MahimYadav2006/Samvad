@@ -117,17 +117,17 @@ export default function Messages() {
           type="button"
           onPointerDown={startResize}
           onDoubleClick={() => setChatListWidth(320)}
-          className={`group hidden w-2 shrink-0 cursor-col-resize items-center justify-center bg-transparent md:flex ${
-            isResizing ? "bg-primary/10" : ""
+          className={`group hidden w-1.5 shrink-0 cursor-col-resize items-center justify-center md:flex ${
+            isResizing ? "bg-primary/8" : ""
           }`}
           title="Drag to resize. Double click to reset."
           aria-label="Resize chat list panel"
         >
           <span
-            className={`h-16 w-1 rounded-full transition ${
+            className={`h-12 w-0.5 rounded-full transition-all ${
               isResizing
-                ? "bg-primary"
-                : "bg-stroke group-hover:bg-primary/60 dark:bg-strokedark"
+                ? "bg-primary/70"
+                : "bg-stroke/60 group-hover:bg-primary/40 dark:bg-strokedark/50"
             }`}
           />
         </button>

@@ -5,7 +5,7 @@ import { toggleGifModal } from "../redux/slices/app";
 import { newDirectMessage } from "../redux/slices/chat";
 
 export default function GifModal() {
-  const  gif  = useSelector((state) => state.app.modals.gif);
+  const gif = useSelector((state) => state.app.modals.gif);
   const selectedGifUrl = useSelector((state) => state.app.selectedGifUrl);
   const dispatch = useDispatch();
   const modalRef = useRef(null);
@@ -29,29 +29,28 @@ export default function GifModal() {
 
   const handleSendMessage = (e) => {
     e.preventDefault();
-    // if (!messageText.trim()) return;
-    if(!selectedGifUrl) return;
-    dispatch(newDirectMessage({ content: messageText, author: user._id, media: null ,audioUrl: null, document:null ,type:null ,giphyUrl:selectedGifUrl }));
-    // console.log("Inside GifModal.jsx", selectedGifUrl);
+    if (!selectedGifUrl) return;
+    dispatch(newDirectMessage({ content: messageText, author: user._id, media: null, audioUrl: null, document: null, type: null, giphyUrl: selectedGifUrl }));
     setMessageText("");
   };
 
   return (
     <div
-      className={`fixed left-0 top-0 z-999999 flex h-full min-h-screen w-full items-center justify-center bg-black/90 px-4 py-5 ${
+      className={`fixed left-0 top-0 z-999999 flex h-full min-h-screen w-full items-center justify-center bg-black/60 backdrop-blur-sm px-4 py-5 ${
         gif ? "block" : "hidden"
       }`}
     >
       <div
         ref={modalRef}
-        className="md:px-17.5 w-full max-w-142.5 rounded-lg bg-white dark:bg-boxdark md:py-8 px-8 py-12"
+        className="w-full max-w-142.5 rounded-2xl bg-white dark:bg-boxdark shadow-2xl px-6 py-6 md:px-8 md:py-8"
       >
-        {/*  Send Giphy Header */}
-        <div className="flex flex-row items-center justify-between mb-8 space-x-2">
-          <div className="text-md font-medium text-black dark:text-white">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-5">
+          <div className="text-base font-bold text-black dark:text-white">
             Send Giphy
           </div>
           <button
+            className="flex h-7 w-7 items-center justify-center rounded-lg text-body/50 transition-colors hover:bg-gray-2 hover:text-black dark:text-bodydark/40 dark:hover:bg-meta-4/50 dark:hover:text-white"
             onClick={() => {
               dispatch(
                 toggleGifModal({
@@ -61,26 +60,31 @@ export default function GifModal() {
               );
             }}
           >
-            <XIcon size={24}></XIcon>
+            <XIcon size={16} />
           </button>
         </div>
 
+        {/* GIF Preview */}
         <img
           src={selectedGifUrl}
           alt=""
-          className="w-full mx-auto max-h-125 object-cover object-center rounded-lg"
+          className="rounded-xl max-h-80 w-full object-contain"
         />
 
-        <div className="flex flex-row items-center space-x-2 justify-between mt-4">
+        {/* Input + Send */}
+        <div className="flex items-center gap-2 mt-4">
           <input
             type="text"
-            className="border rounded-lg hover:border-primary outline-none w-full p-2 border-stroke dark:border-strokedark bg-transparent dark:bg-form-input"
+            className="w-full rounded-xl border border-stroke/70 bg-white py-2.5 pl-4 pr-4 text-sm outline-none transition-colors focus:border-primary/50 dark:border-strokedark/60 dark:bg-form-input dark:text-white"
             placeholder="Type your message.."
             value={messageText}
             onChange={(e) => setMessageText(e.target.value)}
           />
-          <button className="p-2.5 border border-primary flex items-center justify-center rounded-lg bg-primary hover:bg-opacity-90 text-white" onClick={handleSendMessage}>
-            <PaperPlaneTiltIcon size={20} weight="bold"></PaperPlaneTiltIcon>
+          <button
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary text-white text-sm font-semibold shadow-md shadow-primary/20 hover:bg-primary/90 transition-all"
+            onClick={handleSendMessage}
+          >
+            <PaperPlaneTiltIcon size={18} weight="bold" />
           </button>
         </div>
       </div>

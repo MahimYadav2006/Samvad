@@ -1,34 +1,40 @@
-import React from 'react'
+import React from 'react';
 import { CheckIcon, ChecksIcon } from '@phosphor-icons/react';
 import Waveform from '../Waveform';
 
-export default function Voice({audioUrl,incoming,timestamp,read_receipt}) {
-  // console.log("Inside Voice.jsx, audioUrl is", audioUrl);
-  return incoming?(
-    <div className='max-w-125 '>
-      <div className='mb-2.5 rounded-2xl rounded-tl-none px-5 py-3 bg-gray dark:bg-boxdark-2'>
-        {/* Waveform */}
-        <Waveform incoming={incoming} audioUrl={audioUrl}/>
-      </div>                      
-      <p className='text-sx'>{timestamp}</p>
-    </div>
-  ):(
-    <div className='ml-auto max-w-125 '>
-      <div className='mb-2.5 rounded-2xl rounded-br-none px-5 py-3'>
-        {/*Waveform*/}
-        <Waveform incoming={incoming} audioUrl={audioUrl}/>
+export default function Voice({ audioUrl, incoming, timestamp, read_receipt }) {
+  return incoming ? (
+    <div className="w-fit max-w-[min(85%,20rem)]">
+      <div className="mb-1.5 rounded-2xl rounded-tl-sm bg-white/90 dark:bg-boxdark-2/90 border border-stroke/40 dark:border-strokedark/40 shadow-sm px-5 py-3">
+        <Waveform incoming={incoming} audioUrl={audioUrl} />
       </div>
-      {/* To Display the read_receipt */}
-      <div className="flex flex-row items-center justify-end space-x-2">
-        <div className={`${read_receipt !== "read" ? "text-body dark:text-white" : "text-primary"}`}>
-          {read_receipt !== "sent" ? (
-            <ChecksIcon weight="bold" size={18} />
-          ):(
-            <CheckIcon weight="bold" size={18}/>
+      <p className="text-[11px] text-body/60 dark:text-bodydark/50">
+        {timestamp}
+      </p>
+    </div>
+  ) : (
+    <div className="ml-auto w-fit max-w-[min(85%,20rem)]">
+      <div className="mb-1.5 rounded-2xl rounded-br-sm bg-gradient-to-br from-primary to-primary/90 shadow-md shadow-primary/15 px-5 py-3">
+        <Waveform incoming={incoming} audioUrl={audioUrl} />
+      </div>
+      <div className="flex flex-row items-center justify-end gap-1.5">
+        <div
+          className={`${
+            read_receipt !== 'read'
+              ? 'text-body/60 dark:text-bodydark/50'
+              : 'text-primary'
+          }`}
+        >
+          {read_receipt !== 'sent' ? (
+            <ChecksIcon weight="bold" size={16} />
+          ) : (
+            <CheckIcon weight="bold" size={16} />
           )}
         </div>
-        <p className="text-xs text-right">{timestamp}</p>
+        <p className="text-[11px] text-body/60 dark:text-bodydark/50">
+          {timestamp}
+        </p>
       </div>
     </div>
-  )
+  );
 }

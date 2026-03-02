@@ -1,20 +1,33 @@
-function extractLinks(inputString){
-    // Regex
-    const urlRegex = /(https?:\/\/[^\s]+)/g;
+const urlRegex = /(https?:\/\/[^\s]+)/g;
 
-    const linksArray = [];
+function escapeHtml(str) {
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
 
-    const modifiedString = inputString.replace(urlRegex,(url)=>{   // This scans the string for all URLs matching the regex. For each match (url), the callback function is called.
-        const urlObject = new URL(url);  //Creates a URL object from the string — allows us to easily extract parts like hostname, pathname, etc.
-        const domain = urlObject.hostname;
-        linksArray.push(url);
-        return `<span class="text-black underline"> <a href="${url}" target="_blank">${domain}</a> </span>`;
-    })
+function extractLinks(inputString) {
+  const linksArray = [];
 
-    return {
-        originalString: modifiedString,
-        links: linksArray,
-    };
+  const modifiedString = inputString.replace(urlRegex, (url) => {
+    try {
+      const urlObject = new URL(url);
+      const domain = escapeHtml(urlObject.hostname);
+      const safeUrl = escapeHtml(url);
+      linksArray.push(url);
+      return `<a href="${safeUrl}" target="_blank" rel="noopener noreferrer" class="text-current underline decoration-current/40 underline-offset-2 hover:decoration-current/80 transition-colors">${domain}</a>`;
+    } catch {
+      return escapeHtml(url);
+    }
+  });
+
+  return {
+    originalString: modifiedString,
+    links: linksArray,
+  };
 }
 
 export default extractLinks;

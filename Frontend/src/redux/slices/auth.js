@@ -63,10 +63,8 @@ export function RegisterUser(formData,navigate){
                 "Content-Type": "application/json",
             },
         }).then(function (response){
-            console.log("Inside Auth Slice ",response);
             toast.success(response.data.message);
         }).catch(function (error){
-            console.log("Inside auth Slice ",error);
             toast.error(error?.message || "Something went wrong"
 );
             dispatch(setError(error));
@@ -91,10 +89,8 @@ export function ResendOTP(email){
                 "Content-Type": "application/json",
             },
         }).then((response)=>{
-            console.log("Inside auth slice" , response.data);
             toast.success(response.data.message);
         }).catch((error)=>{
-            console.log("Inside auth slice",error);
             dispatch(setError(error));
             toast.error("Something Went Wrong");
         }).finally(()=>{
@@ -115,14 +111,12 @@ export function VerifyOTP(formValues,navigate){ // cuz if it is verified then we
                 "Content-Type": "application/json",
             },
         }).then((response)=>{
-            console.log("Inside auth slice" , response.data);
 
             const {token,message,user_id} = response.data;
 
             dispatch(setAuthSession({ token, userId: user_id }));
             toast.success(message || "Email Verified Successfully");
         }).catch((error)=>{
-            console.log("Inside auth slice",error);
             dispatch(setError(error));
             toast.error(error?.message || "Something Went Wrong");
         }).finally(()=>{
@@ -146,14 +140,12 @@ export function LoginUser(formValues,navigate){ // cuz if it is verified then we
                 "Content-Type": "application/json",
             },
         }).then((response)=>{
-            console.log("Inside auth slice" , response.data);
 
             const {token,message,user_id} = response.data;
 
             dispatch(setAuthSession({ token, userId: user_id }));
             toast.success(message || "Logged In Successfully");
         }).catch((error)=>{
-            console.log("Inside auth slice",error);
             dispatch(setError(error));
             toast.error(error?.message || "Something Went Wrong");
         }).finally(()=>{
@@ -176,14 +168,12 @@ export function GoogleAuthUser(accessToken, navigate) {
                 "Content-Type": "application/json",
             },
         }).then((response) => {
-            console.log("Inside Google auth slice", response.data);
 
             const { token, message, user_id } = response.data;
 
             dispatch(setAuthSession({ token, userId: user_id }));
             toast.success(message || "Google authentication successful");
         }).catch((error) => {
-            console.log("Inside Google auth slice", error);
             dispatch(setError(error));
             toast.error(error?.response?.data?.message || error?.message || "Something Went Wrong");
         }).finally(() => {
@@ -197,14 +187,12 @@ export function GoogleAuthUser(accessToken, navigate) {
 
 // Sign Out
 export function LogoutUser(navigate){
-    console.log("HI I entered the logout function");
     return async(dispatch) => {
         try{
             dispatch(logOutSuccess());
             navigate("/");
             toast.success("Logout Success");
         }catch(error){
-            console.log("Error in LogoutUser: ", error);
         }
     }
 }

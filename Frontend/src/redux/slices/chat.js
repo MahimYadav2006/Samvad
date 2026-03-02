@@ -12,7 +12,7 @@ const initialState = {
 };
 
 const slice = createSlice({
-    name: "user",
+    name: "chat",
     initialState,
     reducers: {
         updateUserList(state, action) {
@@ -70,10 +70,8 @@ export function fetchUserList(){
         },
       }).then(function (response){
             dispatch(updateUserList(response.data.data.users));
-            console.log("Inside Chat Slice ",response.data.data.users);
             // toast.success(response.data.message);
         }).catch(function (error){
-            console.log("Inside Chat Slice ",error);
             toast.error(error?.message || "Something went wrong"
 );
             dispatch(setError(error));
@@ -91,7 +89,6 @@ export function newDirectMessage(data) {
 
         const socket = getSocket();
         if (!socket) {
-            console.error("Socket is not connected.");
             toast.error("Socket connection lost.");
             dispatch(setLoading(false));
             return;
@@ -101,15 +98,11 @@ export function newDirectMessage(data) {
             message: data,
             conversationId: getState().user.currConversation,
         };
-        console.log("New Direct Message Data: ", newData);
 
         socket.emit('new-message', newData, (response) => {
             if (response?.error) {
-                console.error("Error sending message:", response.error);
                 toast.error(response.error || "Failed to send message");
             } else {
-                console.log("New direct message sent", newData);
-                console.log("Fetching Messages from Server");
                 // dispatch(fetchMessages(getState().user.currConversation));
                 toast.success("Message sent successfully");
             }
@@ -125,23 +118,21 @@ export const uploadDocument = createAsyncThunk(
       try {
         const formData = new FormData();
         formData.append("document", file);
-  
+
         const token = getAuthToken(getState);
         if (!token) {
           return rejectWithValue({ message: "Invalid auth token" });
         }
-  
+
         const res = await axios.post("/chat/upload-doc", formData, {
           headers: {
             "Content-Type": "multipart/form-data",
             authorization: `bearer ${token}`,
           },
         });
-  
-        console.log("✅ Document uploaded:", res.data.data);
+
         return res.data.data; // {url, name, size, type, public_id}
       } catch (err) {
-        console.error("❌ Upload document failed:", err);
         return rejectWithValue(err?.response?.data || err.message);
       }
     }
@@ -178,7 +169,6 @@ export function uploadAudioMessage(file) {
             return audioUrl;
 
         } catch (err) {
-            console.error(" Failed to upload audio:", err);
             toast.error(err?.response?.data?.message || "Failed to upload audio");
             dispatch(setError(err));
         } finally {
@@ -187,7 +177,7 @@ export function uploadAudioMessage(file) {
     };
 }
 
-// Upload Media 
+// Upload Media
 export function uploadMedia(file) {
     return async (dispatch, getState) => {
       dispatch(setError(null));
@@ -198,24 +188,23 @@ export function uploadMedia(file) {
         dispatch(setLoading(false));
         return null;
       }
-  
+
       try {
         const formData = new FormData();
         formData.append("media", file); // Single file
-  
+
         const response = await axios.post("/chat/upload-media", formData, {
           headers: {
             "Content-Type": "multipart/form-data",
             authorization: `bearer ${token}`,
           },
         });
-  
+
         const uploadedFile = response.data.data;
         toast.success("Media uploaded successfully");
         return uploadedFile;
-  
+
       } catch (err) {
-        console.error("Upload failed:", err);
         toast.error(err?.response?.data?.message || "Failed to upload media");
         dispatch(setError(err));
         return null;
@@ -224,11 +213,3 @@ export function uploadMedia(file) {
       }
     };
   }
-  
-  
-
-
-  
-
-
-
