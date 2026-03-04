@@ -1,28 +1,31 @@
-# Stage 1: Build the Vite app
-FROM node:18-alpine AS build
+# ── Stage 1: Build the Vite/React app ─────────────────────────────
+FROM node:22-alpine AS builder
 
 WORKDIR /app
 
-# Copy dependencies and install
-COPY package*.json ./
-RUN npm ci
+# Install all dependencies (devDeps needed for the build)
+COPY package.json package-lock.json ./
+RUN npm ci && npm cache clean --force
 
-# Copy all source code
+# Copy source (includes .env so Vite can inline VITE_* vars)
 COPY . .
 
-# Build production output
+# Allow overriding the backend URL at build time
+ARG VITE_BACKEND_URL=http://localhost:8000
+ENV VITE_BACKEND_URL=$VITE_BACKEND_URL
+
 RUN npm run build
 
+# ── Stage 2: Serve with Nginx ─────────────────────────────────────
+FROM nginx:1.27-alpine
 
-# Stage 2: Serve with Nginx on port 5173
-FROM nginx:alpine
+# Remove default nginx site
+RUN rm /etc/nginx/conf.d/default.conf
 
-# Copy the built Vite app to Nginx
-COPY --from=build /app/dist /usr/share/nginx/html
-
-# Copy a custom Nginx config to serve on port 5173
+# Copy custom config and built assets
 COPY nginx.conf /etc/nginx/conf.d/default.conf
+COPY --from=builder /app/dist /usr/share/nginx/html
 
-EXPOSE 5173
+EXPOSE 80
 
 CMD ["nginx", "-g", "daemon off;"]

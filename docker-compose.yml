@@ -1,32 +1,72 @@
+# services:
+#   # ── Node.js API + Socket.io server ──────────────────────────────
+#   backend:
+#     build:
+#       context: ./Backend
+#       dockerfile: Dockerfile
+#     container_name: samvad-backend
+#     restart: unless-stopped
+#     ports:
+#       - "8000:8000"
+#     # Mount config.env at runtime so secrets are never baked into the image.
+#     # dotenv in server.js reads ./config.env; this volume provides the file.
+#     volumes:
+#       - ./Backend/config.env:/app/config.env:ro
+
+#   # ── Vite/React SPA served by Nginx ──────────────────────────────
+#   frontend:
+#     build:
+#       context: ./Frontend
+#       dockerfile: Dockerfile
+#       args:
+#         # The browser calls this URL directly, so "localhost" works for
+#         # local Docker. Change this when deploying to a remote server.
+#         VITE_BACKEND_URL: http://localhost:8000
+#     container_name: samvad-frontend
+#     restart: unless-stopped
+#     ports:
+#       - "3000:80"
+#     depends_on:
+#       - backend
+
+
 version: "3.9"
 
 services:
+  # ── Node.js API + Socket.io server ──────────────────────────────
   backend:
     build:
       context: ./Backend
       dockerfile: Dockerfile
     container_name: samvad-backend
+    restart: unless-stopped
     ports:
       - "8000:8000"
     env_file:
       - ./Backend/config.env
-    restart: always
-    working_dir: /app
-    command: ["npm", "start"]
+    environment:
+      - NODE_ENV=production
     networks:
-      - samvad-net
+      - samvad-network
 
+  # ── Vite/React SPA served by Nginx ──────────────────────────────
   frontend:
     build:
       context: ./Frontend
       dockerfile: Dockerfile
+      args:
+        # Browser runs outside Docker,
+        # so it must hit localhost (host machine)
+        VITE_BACKEND_URL: http://localhost:8000
     container_name: samvad-frontend
+    restart: unless-stopped
     ports:
-      - "5173:5173"
+      - "3000:80"
     depends_on:
       - backend
-    restart: always
     networks:
-      - samvad-net
-    environment:
-      - VITE_BACKEND_URL=http://samvad-backend:8000
+      - samvad-network
+
+networks:
+  samvad-network:
+    driver: bridge

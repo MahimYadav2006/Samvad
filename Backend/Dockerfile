@@ -1,24 +1,22 @@
-# 1️⃣ Base image — lightweight Node.js
-FROM node:18-alpine
+# ── Backend Production Dockerfile ──────────────────────────────────
+FROM node:22-alpine AS production
 
-# 2️⃣ Create and set working directory inside container
+# Non-root user for security
+RUN addgroup -S samvad && adduser -S samvad -G samvad
+
 WORKDIR /app
 
-# 3️⃣ Copy only package files first (for better caching)
-COPY package*.json ./
+# Install production dependencies (layer cached unless package files change)
+COPY package.json package-lock.json ./
+RUN npm ci --omit=dev && npm cache clean --force
 
-# 4️⃣ Install dependencies
-RUN npm ci --only=production
-
-# 5️⃣ Copy the rest of your backend source code
+# Copy application source
 COPY . .
 
-# 6️⃣ Expose backend port
+# Own everything by the non-root user
+RUN chown -R samvad:samvad /app
+USER samvad
+
 EXPOSE 8000
 
-# 7️⃣ Define environment variable
-ENV NODE_ENV=production
-ENV PORT=8000
-
-# 8️⃣ Start the backend server
 CMD ["node", "server.js"]

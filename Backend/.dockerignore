@@ -1,22 +1,8 @@
-# Dependencies
 node_modules
-npm-debug.log
-yarn-error.log
-
-# Local environment
-.env
-config.env
-
-# Logs
-logs
-*.log
-
-# System junk
-.DS_Store
+npm-debug.log*
 .git
 .gitignore
-.vscode
-
-# Docker stuff
 Dockerfile
-docker-compose.yml
+.dockerignore
+config.env
+*.md

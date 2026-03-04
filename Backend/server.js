@@ -8,7 +8,7 @@ const User = require('./Models/User');
 
 dotenv.config({path: "./config.env"});
 
-const PORT = Number(process.env.PORT || process.env.API_PORT || 8000);
+const PORT = Number(process.env.BACKEND_PORT || process.env.API_PORT || 8000);
 const server = http.createServer(app);
 socketServer.registerSocketServer(server);
 

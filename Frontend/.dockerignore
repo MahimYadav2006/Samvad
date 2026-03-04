@@ -1,23 +1,8 @@
-# Ignore node modules
 node_modules
-npm-debug.log
-yarn-error.log
-
-# Local environment files
-.env
-.env.local
-config.env
-
-# Build output (optional if you rebuild inside container)
 dist
-build
-
-# System files
-.DS_Store
+npm-debug.log*
 .git
 .gitignore
-.vscode
-
-# Docker files
 Dockerfile
-docker-compose.yml
+.dockerignore
+*.md
