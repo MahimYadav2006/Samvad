@@ -3,7 +3,7 @@ import { test, expect } from '@playwright/test';
 test.describe('App Navigation & UI', () => {
   test('should load login page with Samvad branding', async ({ page }) => {
     await page.goto('/auth/login');
-    await expect(page.getByText('Samvad')).toBeVisible();
+    await expect(page.getByText('Samvad').first()).toBeVisible();
   });
 
   test('should have correct page title', async ({ page }) => {

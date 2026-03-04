@@ -3,7 +3,7 @@ import { test, expect } from '@playwright/test';
 test.describe('Authentication Flow', () => {
   test('should show login page at /auth/login', async ({ page }) => {
     await page.goto('/auth/login');
-    await expect(page.getByText('Sign In')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Sign In' })).toBeVisible();
     await expect(page.getByPlaceholder('you@example.com')).toBeVisible();
     await expect(page.getByPlaceholder('Enter your password')).toBeVisible();
   });
@@ -49,13 +49,18 @@ test.describe('Authentication Flow', () => {
 
   test('should validate email format on login', async ({ page }) => {
     await page.goto('/auth/login');
-    await page.getByPlaceholder('you@example.com').fill('not-an-email');
+
+    // Bypass browser's native type="email" validation so Yup validation runs
+    const emailInput = page.getByPlaceholder('you@example.com');
+    await emailInput.evaluate((el) => el.setAttribute('type', 'text'));
+    await emailInput.fill('not-an-email');
     await page.getByPlaceholder('Enter your password').fill('password123');
 
     const submitButton = page.locator('button[type="submit"]');
     await submitButton.click();
 
-    await expect(page.getByText(/valid email/i)).toBeVisible();
+    // Yup shows "Please enter a valid email"
+    await expect(page.getByText(/valid email/i)).toBeVisible({ timeout: 10000 });
   });
 
   test('should show password mismatch error on signup', async ({ page }) => {
