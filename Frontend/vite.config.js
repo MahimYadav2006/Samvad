@@ -8,4 +8,23 @@ export default defineConfig({
     allowedHosts: ['.ngrok-free.app'], // allow any subdomain of ngrok-free.app
     port: 5173, // optional
   },
+  test: {
+    globals: true,
+    environment: 'jsdom',
+    setupFiles: './src/tests/setup.js',
+    css: true,
+    exclude: ['e2e/**', 'node_modules/**'],
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'lcov'],
+      include: [
+        'src/components/**',
+        'src/pages/**',
+        'src/redux/**',
+        'src/utils/**',
+        'src/layout/**',
+        'src/section/**',
+      ],
+    },
+  },
 })

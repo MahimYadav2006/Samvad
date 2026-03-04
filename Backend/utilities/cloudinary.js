@@ -1,6 +1,19 @@
 const cloudinary = require("cloudinary").v2;
-const { CloudinaryStorage } = require("multer-storage-cloudinary");
+const cloudinaryStorageModule = require("multer-storage-cloudinary");
 const multer = require("multer");
+
+// Supports both multer-storage-cloudinary v2 (factory fn) and v4+ (CloudinaryStorage class).
+const createCloudinaryStorage = (options) => {
+  if (typeof cloudinaryStorageModule === "function") {
+    return cloudinaryStorageModule(options);
+  }
+
+  if (typeof cloudinaryStorageModule?.CloudinaryStorage === "function") {
+    return new cloudinaryStorageModule.CloudinaryStorage(options);
+  }
+
+  throw new TypeError("Unsupported multer-storage-cloudinary export shape");
+};
 
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -8,7 +21,7 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
-const avatarStorage = new CloudinaryStorage({
+const avatarStorage = createCloudinaryStorage({
   cloudinary: cloudinary,
   params: {
     folder: "avatars", // optional folder name in Cloudinary
@@ -17,7 +30,7 @@ const avatarStorage = new CloudinaryStorage({
   },
 });
 
-const docStorage = new CloudinaryStorage({
+const docStorage = createCloudinaryStorage({
   cloudinary: cloudinary,
   params: {
     folder: "documents",
@@ -26,7 +39,7 @@ const docStorage = new CloudinaryStorage({
   },
 });
 
-const audioStorage = new CloudinaryStorage({
+const audioStorage = createCloudinaryStorage({
   cloudinary: cloudinary,
   params: {
     folder: "audio",
@@ -35,7 +48,7 @@ const audioStorage = new CloudinaryStorage({
   },
 });
 
-const mediaStorage = new CloudinaryStorage({
+const mediaStorage = createCloudinaryStorage({
   cloudinary,
   params: async (req, file) => {
     let folder = "media";
