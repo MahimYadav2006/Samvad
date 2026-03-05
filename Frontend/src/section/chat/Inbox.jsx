@@ -435,7 +435,7 @@ function Inbox({ otherPerson, onBackToList, className = "" }) {
 
               <button
                 type="submit"
-                disabled={!messageText.trim()}
+                disabled={!messageText.trim() || !currentUserId}
                 className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary text-white shadow-md shadow-primary/20 transition-all hover:bg-primary/90 hover:shadow-lg hover:shadow-primary/25 disabled:opacity-40 disabled:shadow-none md:h-12 md:w-12"
               >
                 <PaperPlaneTiltIcon size={18} weight="bold" />

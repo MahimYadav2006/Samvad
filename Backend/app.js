@@ -7,14 +7,38 @@ const cors = require("cors");
 const cookieParser = require("cookie-parser");
 
 const routes = require("./routes/index");
+const {
+    getAllowedOrigins,
+    isWildcardOriginEnabled,
+    isOriginAllowed,
+} = require("./utilities/corsConfig");
 
 const app = express();
 
-// Enable CORS
-app.use(cors({
-    origin: "*",
+const allowedOrigins = getAllowedOrigins();
+const allowWildcardOrigin = isWildcardOriginEnabled(allowedOrigins);
+
+// Railway sits behind a reverse proxy; trust the first hop.
+app.set("trust proxy", 1);
+
+const corsOptions = {
+    origin: (origin, callback) => {
+        if (isOriginAllowed(origin, allowedOrigins, allowWildcardOrigin)) {
+            callback(null, true);
+            return;
+        }
+        callback(null, false);
+    },
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
-}));
+    credentials: true,
+};
+
+app.use(cors(corsOptions));
+
+// Health check endpoint for container orchestration
+app.get("/healthz", (_req, res) => {
+    res.status(200).json({ status: "ok" });
+});
 
 // Security Headers
 app.use(helmet());
@@ -23,8 +47,8 @@ app.use(helmet());
 app.use(morgan("dev"));
 
 // Parse JSON and URL-encoded data
-app.use(express.json({ limit: "10kb" }));
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: "5mb" }));
+app.use(express.urlencoded({ extended: true, limit: "5mb" }));
 
 // Cookie Parser
 app.use(cookieParser());
@@ -48,5 +72,28 @@ app.use((req, res, next) => {
 
 // Mount Routes
 app.use(routes);
+
+// ── Multer / file-upload error handler ──────────────────────────────────
+// Must come AFTER routes so that multer fileFilter rejections & size
+// limit errors are caught here instead of crashing or returning HTML.
+const multer = require("multer");
+app.use((err, req, res, _next) => {
+  if (err instanceof multer.MulterError) {
+    // Multer-specific error (file too large, too many files, etc.)
+    return res.status(400).json({
+      status: "fail",
+      message: err.code === "LIMIT_FILE_SIZE"
+        ? "File is too large"
+        : err.message,
+    });
+  }
+  if (err) {
+    // Custom fileFilter errors or other middleware errors
+    return res.status(400).json({
+      status: "fail",
+      message: err.message || "Upload failed",
+    });
+  }
+});
 
 module.exports = app;

@@ -4,7 +4,7 @@ import { useRef, useEffect} from "react";
 import Dropzone from "dropzone";
 import { UploadSimpleIcon } from "@phosphor-icons/react";
 
-export default function FileDropZone({ fileData, setFileData, acceptedFiles, maxFileSize = 16 * 1024 * 1024 }) {
+export default function FileDropZone({ setFileData, acceptedFiles, maxFileSize = 16 * 1024 * 1024 }) {
   const dropZoneRef = useRef(null);
   const formRef = useRef(null);
   const dispatch = useDispatch();
@@ -54,7 +54,7 @@ export default function FileDropZone({ fileData, setFileData, acceptedFiles, max
         dropZoneRef.current = null;
       }
     };
-  }, [acceptedFiles, maxFileSize, dispatch]);
+  }, [acceptedFiles, maxFileSize, dispatch, setFileData]);
 
   return (
     <div className="rounded-sm border border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark">

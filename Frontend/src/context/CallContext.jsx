@@ -1,6 +1,6 @@
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import React, { createContext, useContext, useEffect, useRef, useState } from "react";
 import { useSelector } from "react-redux";
-import { getSocket } from "../utils/socket";
+import { getWebRtcIceServers } from "../utils/networkConfig";
 
 const CallContext = createContext();
 
@@ -38,22 +38,8 @@ export const CallProvider = ({ children }) => {
   // }, []);
 
   // ICE servers configuration (STUN + TURN for cross-network connectivity)
-  const turnUrls = import.meta.env.VITE_TURN_URLS;
-  const turnUsername = import.meta.env.VITE_TURN_USERNAME;
-  const turnCredential = import.meta.env.VITE_TURN_CREDENTIAL;
-
   const iceServers = {
-    iceServers: [
-      { urls: "stun:stun.l.google.com:19302" },
-      { urls: "stun:stun1.l.google.com:19302" },
-      ...(turnUrls
-        ? turnUrls.split(",").map((url) => ({
-            urls: url.trim(),
-            username: turnUsername,
-            credential: turnCredential,
-          }))
-        : []),
-    ],
+    iceServers: getWebRtcIceServers(),
   };
 
   // ✅ Create PeerConnection

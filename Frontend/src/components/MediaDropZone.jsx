@@ -4,7 +4,7 @@ import { useRef, useEffect } from "react";
 import Dropzone from "dropzone";
 import { UploadSimpleIcon } from "@phosphor-icons/react";
 
-export default function MediaDropZone({ fileData, setFileData, acceptedFiles }) {
+export default function MediaDropZone({ setFileData, acceptedFiles }) {
   const dropZoneRef = useRef(null);
   const formRef = useRef(null);
   const dispatch = useDispatch();
@@ -18,7 +18,7 @@ export default function MediaDropZone({ fileData, setFileData, acceptedFiles }) 
         autoProcessQueue: false,
         acceptedFiles,
         maxFiles: 1, // Ensure only one file
-        maxFilesize: 16, // MB
+        maxFilesize: 50, // MB — matches backend UPLOAD_LIMITS.media
         addRemoveLinks: true,
         init() {
           this.on("addedfile", async (file) => {
@@ -31,7 +31,7 @@ export default function MediaDropZone({ fileData, setFileData, acceptedFiles }) 
               } else {
                 this.emit("error", file, "Upload failed");
               }
-            } catch (err) {
+            } catch {
               this.emit("error", file, "Exception occurred");
             }
             this.emit("complete", file);

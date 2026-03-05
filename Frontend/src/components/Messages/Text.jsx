@@ -5,7 +5,6 @@ import { CheckIcon, ChecksIcon } from "@phosphor-icons/react";
 
 const Text = React.memo(function Text({
   incoming,
-  author,
   timestamp,
   read_receipt,
   content,

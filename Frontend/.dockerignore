@@ -5,4 +5,12 @@ npm-debug.log*
 .gitignore
 Dockerfile
 .dockerignore
+# Keep all local env files out of image context.
+.env.*
+.env
 *.md
+coverage
+e2e
+playwright-report
+test-results
+playwright.config.js

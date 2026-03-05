@@ -58,21 +58,25 @@ const VideoCallModal = () => {
   const initial = remoteUser?.name?.charAt(0).toUpperCase() || "?";
 
   // ── Control button component ──────────────────────────
-  const ControlButton = ({ onClick, active, activeColor, icon: Icon, label }) => (
-    <button
-      onClick={onClick}
-      className={`group relative flex items-center justify-center rounded-full transition-all duration-200 active:scale-90
-        w-12 h-12 sm:w-14 sm:h-14
-        ${
-          active
-            ? `${activeColor} shadow-lg`
-            : "bg-white/10 hover:bg-white/20"
-        }`}
-      title={label}
-    >
-      <Icon className="text-white text-lg sm:text-xl" />
-    </button>
-  );
+  const ControlButton = ({ onClick, active, activeColor, icon, label }) => {
+    const IconComponent = icon;
+
+    return (
+      <button
+        onClick={onClick}
+        className={`group relative flex items-center justify-center rounded-full transition-all duration-200 active:scale-90
+          w-12 h-12 sm:w-14 sm:h-14
+          ${
+            active
+              ? `${activeColor} shadow-lg`
+              : "bg-white/10 hover:bg-white/20"
+          }`}
+        title={label}
+      >
+        <IconComponent className="text-white text-lg sm:text-xl" />
+      </button>
+    );
+  };
 
   // ── VIDEO CALL LAYOUT ─────────────────────────────────
   if (isVideo) {

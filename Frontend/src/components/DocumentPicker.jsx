@@ -66,7 +66,8 @@ export default function DocumentPicker() {
         <FileDropZone
           fileData={fileData}
           setFileData={setFileData}
-          acceptedFiles=".pdf,.ppt,.doc,.docx,.xls,.xlsx,.txt,.csv,.fig"
+          acceptedFiles=".pdf,.ppt,.pptx,.doc,.docx,.xls,.xlsx,.txt,.csv,.zip"
+          maxFileSize={25 * 1024 * 1024}
         />
 
         <form

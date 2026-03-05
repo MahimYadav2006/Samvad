@@ -5,7 +5,7 @@ export default defineConfig({
   plugins: [react()],
   server: {
     host: true, // allows access from network (0.0.0.0)
-    allowedHosts: ['.ngrok-free.app'], // allow any subdomain of ngrok-free.app
+    allowedHosts: ['localhost', '127.0.0.1', '.ngrok-free.app'],
     port: 5173, // optional
   },
   test: {

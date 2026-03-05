@@ -188,11 +188,8 @@ export function GoogleAuthUser(accessToken, navigate) {
 // Sign Out
 export function LogoutUser(navigate){
     return async(dispatch) => {
-        try{
-            dispatch(logOutSuccess());
-            navigate("/");
-            toast.success("Logout Success");
-        }catch(error){
-        }
+        dispatch(logOutSuccess());
+        navigate("/");
+        toast.success("Logout Success");
     }
 }

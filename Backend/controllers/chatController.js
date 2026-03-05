@@ -19,7 +19,7 @@ exports.uploadDoc = catchAsync(async (req, res, next) => {
         return res.status(400).json({ error: "No file uploaded" });
     }
 
-    const { path: url, originalname: name, mimetype, filename: public_id } = req.file;
+    const { url: url, originalname: name, mimetype, filename: public_id } = req.file;
     const size = req.file.size || req.file.bytes || null;
 
     res.status(200).json({
@@ -40,13 +40,11 @@ exports.uploadAudio = catchAsync(async (req, res, next) => {
         return res.status(400).json({ error: "No audio file uploaded" });
     }
 
-    const { path: audioUrl } = req.file;
-
     res.status(200).json({
         status: "success",
         message: "Audio uploaded successfully",
         data: {
-            audioUrl
+            audioUrl : req.file.url
         }
     });
 });
@@ -56,8 +54,8 @@ exports.uploadMedia = catchAsync(async (req, res, next) => {
       return res.status(400).json({ error: "No media file uploaded" });
     }
   
-    const { path: url, originalname: name, mimetype, filename: public_id, size } = req.file;
-  
+    const { url: url, originalname: name, mimetype, filename: public_id, size } = req.file;
+    console.log(req.file);
     res.status(200).json({
       status: "success",
       message: "Media file uploaded successfully",

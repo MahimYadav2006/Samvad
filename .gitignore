@@ -12,6 +12,7 @@
 Frontend/config.env
 Backend/config.env
 *.env
+!.env.example
 
 #  Ignore build and dist directories
 Frontend/build/

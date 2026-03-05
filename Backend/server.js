@@ -1,14 +1,18 @@
-const app = require('./app');
 const dotenv = require("dotenv");
+const path = require("path");
+
+// Load env vars BEFORE any other require so that modules like
+// cloudinary.js read the correct process.env values at load time.
+dotenv.config({ path: path.resolve(__dirname, "config.env") });
+
+const app = require('./app');
 const socketServer = require('./socketServer');
 const mongoose = require('mongoose');
 const http = require('http');
 const net = require('net');
 const User = require('./Models/User');
 
-dotenv.config({path: "./config.env"});
-
-const PORT = Number(process.env.BACKEND_PORT || process.env.API_PORT || 8000);
+const PORT = Number(process.env.PORT || 8000);
 const server = http.createServer(app);
 socketServer.registerSocketServer(server);
 
@@ -51,7 +55,7 @@ const startServer = async () => {
         const available = await isPortAvailable(PORT);
         if (!available) {
             console.error(
-                `❌ Port ${PORT} is already in use. Stop the existing backend process or change PORT/API_PORT in Backend/config.env.`
+                `❌ Port ${PORT} is already in use. Stop the existing backend process or change PORT in your environment.`
             );
             await mongoose.connection.close();
             process.exit(1);
@@ -73,7 +77,7 @@ const startServer = async () => {
 server.on("error", (error) => {
     if (error.code === "EADDRINUSE") {
         console.error(
-            `❌ Port ${PORT} is already in use. Stop the existing backend process or change PORT/API_PORT in Backend/config.env.`
+            `❌ Port ${PORT} is already in use. Stop the existing backend process or change PORT in your environment.`
         );
     } else {
         console.error("❌ Server failed to start:", error.message);
@@ -82,4 +86,3 @@ server.on("error", (error) => {
 });
 
 startServer();
-

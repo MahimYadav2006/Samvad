@@ -13,7 +13,6 @@ export default function VoiceRecorder() {
 
   const recorderControls = useAudioRecorder();
 
-  const [recordedBlob, setRecordedBlob] = useState(null);
   const [audioUrl, setAudioUrl] = useState(null);
   const [uploading, setUploading] = useState(false);
 
@@ -27,8 +26,6 @@ export default function VoiceRecorder() {
   }, [audioModal]);
 
   const handleRecordingComplete = (blob) => {
-    setRecordedBlob(blob);
-
     setUploading(true);
     dispatch(uploadAudioMessage(blob))
       .then((cloudUrl) => {
@@ -61,7 +58,6 @@ export default function VoiceRecorder() {
   };
 
   const handleCancel = () => {
-    setRecordedBlob(null);
     setAudioUrl(null);
     setUploading(false);
     dispatch(toggleAudioModal(false));

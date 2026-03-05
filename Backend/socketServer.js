@@ -5,6 +5,11 @@ const startTypingHandler = require('./socketHandlers/startTypingHandler');
 const stopTypingHandler = require('./socketHandlers/stopTypingHandler');
 const chatHistoryHandler = require('./socketHandlers/getMessageHistory');
 const newMessageHandler = require('./socketHandlers/newMessageHandler');
+const {
+    getAllowedOrigins,
+    isWildcardOriginEnabled,
+    isOriginAllowed,
+} = require("./utilities/corsConfig");
 
 const userSocketMap = new Map(); // userId -> Set(socketIds)
 
@@ -56,10 +61,20 @@ const getSocketCountForUser = (userId) => {
 };
 
 const registerSocketServer = (server) => {
+    const allowedOrigins = getAllowedOrigins();
+    const allowWildcardOrigin = isWildcardOriginEnabled(allowedOrigins);
+
     const io = require('socket.io')(server, {
         cors: {
-            origin: "*",
-            methods: ["GET", "POST"],
+            origin: (origin, callback) => {
+                if (isOriginAllowed(origin, allowedOrigins, allowWildcardOrigin)) {
+                    callback(null, true);
+                    return;
+                }
+                callback(new Error(`Socket.IO CORS blocked for origin: ${origin}`));
+            },
+            methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+            credentials: true,
         }
     });
 

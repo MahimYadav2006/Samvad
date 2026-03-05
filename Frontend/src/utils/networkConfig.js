@@ -1,3 +1,5 @@
+import { getPublicEnv } from "./runtimeConfig";
+
 const DEFAULT_BACKEND_URL = "http://localhost:8000";
 const DEFAULT_STUN_URLS = [
   "stun:stun.l.google.com:19302",
@@ -29,7 +31,7 @@ const dedupeServers = (servers) => {
 };
 
 export const getBackendUrl = () => {
-  const configured = import.meta.env.VITE_BACKEND_URL;
+  const configured = getPublicEnv("VITE_BACKEND_URL");
   if (!configured || !String(configured).trim()) {
     return DEFAULT_BACKEND_URL;
   }
@@ -55,10 +57,9 @@ export const getBackendUrl = () => {
 };
 
 export const getWebRtcIceServers = () => {
-  const env = import.meta.env;
   const servers = [];
 
-  const customJson = env.VITE_WEBRTC_ICE_SERVERS;
+  const customJson = getPublicEnv("VITE_WEBRTC_ICE_SERVERS");
   if (customJson) {
     try {
       const parsed = JSON.parse(customJson);
@@ -74,15 +75,15 @@ export const getWebRtcIceServers = () => {
     }
   }
 
-  const stunUrls = parseCsv(env.VITE_STUN_URLS);
+  const stunUrls = parseCsv(getPublicEnv("VITE_STUN_URLS"));
   const effectiveStunUrls = stunUrls.length > 0 ? stunUrls : DEFAULT_STUN_URLS;
   if (effectiveStunUrls.length > 0) {
     servers.push({ urls: effectiveStunUrls });
   }
 
-  const turnUrls = parseCsv(env.VITE_TURN_URLS);
-  const turnUsername = env.VITE_TURN_USERNAME;
-  const turnCredential = env.VITE_TURN_CREDENTIAL;
+  const turnUrls = parseCsv(getPublicEnv("VITE_TURN_URLS"));
+  const turnUsername = getPublicEnv("VITE_TURN_USERNAME");
+  const turnCredential = getPublicEnv("VITE_TURN_CREDENTIAL");
   if (turnUrls.length > 0 && turnUsername && turnCredential) {
     servers.push({
       urls: turnUrls,

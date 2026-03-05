@@ -240,7 +240,10 @@ exports.googleAuth = catchAsync(async (req, res, next) => {
         });
     }
 
-    if (tokenInfo.aud !== googleClientId) {
+    // Google's tokeninfo may return the client ID in `aud` or `azp`
+    // depending on the grant type and API version.
+    const tokenAudience = tokenInfo.aud || tokenInfo.azp;
+    if (!tokenAudience || tokenAudience !== googleClientId) {
         return res.status(401).json({
             status: "error",
             message: "Google token audience mismatch",

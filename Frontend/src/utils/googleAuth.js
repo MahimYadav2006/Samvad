@@ -1,3 +1,5 @@
+import { getPublicEnv } from "./runtimeConfig";
+
 const GOOGLE_SCRIPT_ID = "google-identity-services";
 const GOOGLE_SCRIPT_URL = "https://accounts.google.com/gsi/client";
 
@@ -41,7 +43,7 @@ const loadGoogleIdentityScript = () => {
 };
 
 export const requestGoogleAccessToken = async () => {
-  const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+  const clientId = getPublicEnv("VITE_GOOGLE_CLIENT_ID");
 
   if (!clientId) {
     throw new Error(

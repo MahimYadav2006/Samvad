@@ -6,6 +6,7 @@ vi.stubEnv('VITE_BACKEND_URL', '');
 describe('networkConfig utilities', () => {
   beforeEach(() => {
     vi.unstubAllEnvs();
+    window.__SAMVAD_CONFIG__ = {};
   });
 
   it('should return default backend URL when VITE_BACKEND_URL is empty', async () => {
@@ -19,9 +20,16 @@ describe('networkConfig utilities', () => {
   it('should return configured backend URL', async () => {
     vi.stubEnv('VITE_BACKEND_URL', 'http://myserver.com:3000');
     const mod = await import('../../utils/networkConfig');
-    // getBackendUrl reads import.meta.env at call time
-    // Since the module caches, we test the function logic
-    expect(typeof mod.getBackendUrl).toBe('function');
+    expect(mod.getBackendUrl()).toBe('http://myserver.com:3000');
+  });
+
+  it('should prioritize runtime config over build-time env', async () => {
+    vi.stubEnv('VITE_BACKEND_URL', 'http://env.example.com');
+    window.__SAMVAD_CONFIG__ = {
+      VITE_BACKEND_URL: 'https://runtime.example.com',
+    };
+    const { getBackendUrl } = await import('../../utils/networkConfig');
+    expect(getBackendUrl()).toBe('https://runtime.example.com');
   });
 
   it('should export getWebRtcIceServers function', async () => {

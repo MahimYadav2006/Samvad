@@ -5,9 +5,10 @@ import debounce from "lodash/debounce";
 import { MagnifyingGlassIcon } from "@phosphor-icons/react";
 import { useDispatch } from "react-redux";
 import { toggleGifModal } from "../redux/slices/app";
+import { getPublicEnv } from "../utils/runtimeConfig";
 
 const gf = new GiphyFetch(
-  import.meta.env.VITE_GIPHY_API_KEY || "hOJ2C21sKprFvw6ocLv58dqYOacEzfF5"
+  getPublicEnv("VITE_GIPHY_API_KEY") || "hOJ2C21sKprFvw6ocLv58dqYOacEzfF5"
 );
 
 export default function Giphy() {

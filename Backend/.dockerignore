@@ -5,4 +5,9 @@ npm-debug.log*
 Dockerfile
 .dockerignore
 config.env
+.env
+.env.*
 *.md
+coverage
+tests
+jest.config.js
