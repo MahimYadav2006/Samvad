@@ -25,6 +25,12 @@ const callHandler = (io) => {
       io.to(to).emit("call:ice-candidate", { candidate });
     });
 
+    // ICE restart: relay a new offer when the caller's ICE failed
+    socket.on("call:ice-restart", ({ to, offer }) => {
+      console.log("ICE restart offer forwarded to", to);
+      io.to(to).emit("call:ice-restart", { offer });
+    });
+
     // End call
     socket.on("call:end", ({ to }) => {
       console.log("Call ended");

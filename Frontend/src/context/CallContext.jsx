@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useRef, useState, useCallback } from "react";
 import { useSelector } from "react-redux";
-import { getWebRtcIceServers } from "../utils/networkConfig";
+import { fetchFreshIceServers, getWebRtcIceServers } from "../utils/networkConfig";
 
 const CallContext = createContext();
 
@@ -33,11 +33,13 @@ export const CallProvider = ({ children }) => {
   const iceCandidateBufferRef = useRef([]);
   // Guard against double-answering
   const isAnsweringRef = useRef(false);
+  // Track whether an ICE restart has already been attempted for the
+  // current peer connection so we don't loop endlessly.
+  const iceRestartAttemptedRef = useRef(false);
 
-  // ICE servers configuration (STUN + TURN for cross-network connectivity)
-  const iceServers = {
-    iceServers: getWebRtcIceServers(),
-  };
+  // Current ICE-server config – refreshed before every call via
+  // fetchFreshIceServers(), which hits the backend Metered API endpoint.
+  const iceServersRef = useRef({ iceServers: getWebRtcIceServers() });
 
   // Helper: flush buffered ICE candidates after remote description is set
   const flushIceCandidateBuffer = async (peerConnection) => {
@@ -63,8 +65,9 @@ export const CallProvider = ({ children }) => {
     }
     // Clear ICE candidate buffer for the new connection
     iceCandidateBufferRef.current = [];
+    iceRestartAttemptedRef.current = false;
 
-    const peerConnection = new RTCPeerConnection(iceServers);
+    const peerConnection = new RTCPeerConnection(iceServersRef.current);
 
     // Add local tracks
     if (localStreamRef.current) {
@@ -96,8 +99,29 @@ export const CallProvider = ({ children }) => {
       const state = peerConnection.iceConnectionState;
       console.log("🧊 ICE connection state:", state);
       if (state === "failed") {
-        console.error("❌ ICE connection failed — no viable candidate pair found");
-        cleanupCall();
+        // Attempt a single ICE restart before giving up
+        if (!iceRestartAttemptedRef.current && peerConnection.signalingState !== "closed") {
+          iceRestartAttemptedRef.current = true;
+          console.warn("⚠️ ICE failed — attempting ICE restart…");
+          peerConnection
+            .createOffer({ iceRestart: true })
+            .then((offer) => peerConnection.setLocalDescription(offer))
+            .then(() => {
+              if (remoteUserId && socket) {
+                socket.emit("call:ice-restart", {
+                  to: remoteUserId,
+                  offer: peerConnection.localDescription,
+                });
+              }
+            })
+            .catch((err) => {
+              console.error("❌ ICE restart failed:", err);
+              cleanupCall();
+            });
+        } else {
+          console.error("❌ ICE connection failed — no viable candidate pair found");
+          cleanupCall();
+        }
       } else if (state === "disconnected") {
         console.warn("⚠️ ICE connection disconnected — may recover");
       }
@@ -139,6 +163,12 @@ export const CallProvider = ({ children }) => {
       setCallType(type);
       setRemoteUser(recipient);
       setIsCallActive(true);
+
+      // Fetch fresh TURN credentials before creating the connection
+      console.log("🔑 Fetching fresh TURN credentials...");
+      const freshServers = await fetchFreshIceServers();
+      iceServersRef.current = { iceServers: freshServers };
+      console.log("✅ ICE servers ready:", freshServers.length, "server(s)");
 
       console.log("📹 Requesting user media...");
       await getUserMedia(type === "video", true);
@@ -183,6 +213,12 @@ export const CallProvider = ({ children }) => {
       setIsCallActive(true);
       setCallType(incomingCall.type || "video");
       setRemoteUser({ _id: incomingCall.from, name: incomingCall.callerName });
+
+      // Fetch fresh TURN credentials before creating the connection
+      console.log("🔑 Fetching fresh TURN credentials...");
+      const freshServers = await fetchFreshIceServers();
+      iceServersRef.current = { iceServers: freshServers };
+      console.log("✅ ICE servers ready:", freshServers.length, "server(s)");
 
       await getUserMedia(incomingCall.type === "video", true);
       const peerConnection = createPeerConnection(incomingCall.from);
@@ -349,6 +385,25 @@ export const CallProvider = ({ children }) => {
       }
     });
 
+    // ICE restart offer from remote peer (sent when their ICE failed)
+    socket.on("call:ice-restart", async ({ offer }) => {
+      console.log("🔄 ICE restart offer received");
+      try {
+        const pc = peerConnectionRef.current;
+        if (!pc) return;
+        await pc.setRemoteDescription(new RTCSessionDescription(offer));
+        const answer = await pc.createAnswer();
+        await pc.setLocalDescription(answer);
+        // Send the answer back through the normal channel
+        const targetId = remoteUser?._id || incomingCall?.from;
+        if (targetId) {
+          socket.emit("call:answer", { to: targetId, answer });
+        }
+      } catch (err) {
+        console.error("❌ ICE restart handling failed:", err);
+      }
+    });
+
     // Call ended
     socket.on("call:ended", () => {
       console.log("📴 Call ended by remote user");
@@ -373,6 +428,7 @@ export const CallProvider = ({ children }) => {
       socket.off("call:incoming");
       socket.off("call:answered");
       socket.off("call:ice-candidate");
+      socket.off("call:ice-restart");
       socket.off("call:ended");
       socket.off("call:rejected");
       socket.off("call:user-busy");
