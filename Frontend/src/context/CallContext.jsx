@@ -44,7 +44,6 @@ export const CallProvider = ({ children }) => {
   const pendingRemoteAnswerRef = useRef(false);
   const incomingCallRef = useRef(null);
   const isCallActiveRef = useRef(false);
-  const statsIntervalRef = useRef(null);
 
   // Current ICE-server config – refreshed before every call via
   // fetchFreshIceServers(), which hits the backend Metered API endpoint.
@@ -58,116 +57,48 @@ export const CallProvider = ({ children }) => {
     isCallActiveRef.current = isCallActive;
   }, [isCallActive]);
 
-  const ensureVideoElementPlayback = useCallback((videoElement, label) => {
-    if (!videoElement) return;
-
-    videoElement.autoplay = true;
-    videoElement.playsInline = true;
-    const playPromise = videoElement.play?.();
-    if (playPromise && typeof playPromise.catch === "function") {
-      playPromise.catch((err) => {
-        console.warn(`⚠️ ${label} media playback blocked:`, err?.message || err);
-      });
-    }
-  }, []);
-
-  const extractVideoCodecOrderFromSdp = useCallback((sdp = "") => {
-    const rtpMap = new Map();
-    const rtpRegex = /a=rtpmap:(\d+)\s+([A-Za-z0-9-]+)\/\d+/g;
-    let match = rtpRegex.exec(sdp);
-    while (match) {
-      rtpMap.set(match[1], match[2]);
-      match = rtpRegex.exec(sdp);
-    }
-
-    const mLineMatch = sdp.match(/^m=video\s+\d+\s+\S+\s+(.+)$/m);
-    if (!mLineMatch?.[1]) return [];
-
-    return mLineMatch[1]
-      .trim()
-      .split(/\s+/)
-      .map((payloadType) => rtpMap.get(payloadType) || payloadType);
-  }, []);
-
-  const logSdpSummary = useCallback((description, label) => {
+  const logSdpMediaSections = useCallback((description, label) => {
     const sdp = description?.sdp || "";
     const hasAudio = /\nm=audio\s/.test(`\n${sdp}`);
     const hasVideo = /\nm=video\s/.test(`\n${sdp}`);
-    const videoCodecOrder = extractVideoCodecOrderFromSdp(sdp);
-
-    console.log(`📄 SDP summary (${label})`, {
+    console.log(`📄 SDP ${label}:`, {
       type: description?.type || "unknown",
       hasAudio,
       hasVideo,
-      videoCodecOrder,
     });
-
-    return { hasAudio, hasVideo, videoCodecOrder };
-  }, [extractVideoCodecOrderFromSdp]);
-
-  const applyVideoCodecPreferences = useCallback((peerConnection) => {
-    try {
-      const capabilities = window.RTCRtpSender?.getCapabilities?.("video");
-      if (!capabilities?.codecs?.length) {
-        return;
-      }
-
-      const preferred = [];
-      const rest = [];
-      capabilities.codecs.forEach((codec) => {
-        const mime = String(codec.mimeType || "").toLowerCase();
-        if (mime.includes("h264") || mime.includes("vp8")) {
-          preferred.push(codec);
-          return;
-        }
-        rest.push(codec);
-      });
-
-      if (preferred.length === 0) {
-        return;
-      }
-
-      peerConnection.getTransceivers().forEach((transceiver) => {
-        const kind = transceiver?.sender?.track?.kind || transceiver?.receiver?.track?.kind;
-        if (kind === "video" && typeof transceiver.setCodecPreferences === "function") {
-          transceiver.setCodecPreferences([...preferred, ...rest]);
-        }
-      });
-
-      console.log("🎞️ Applied codec preference (H264/VP8 prioritized)");
-    } catch (err) {
-      console.warn("⚠️ Unable to set codec preferences:", err?.message || err);
-    }
   }, []);
 
-  const assertLocalTracksBeforeOffer = useCallback((peerConnection, callTypeValue) => {
-    const senderTracks = peerConnection
+  const logPeerTrackState = useCallback((peerConnection, label) => {
+    if (!peerConnection) return;
+    const senders = peerConnection
       .getSenders()
       .map((sender) => sender.track)
-      .filter(Boolean);
+      .filter(Boolean)
+      .map((track) => ({
+        id: track.id,
+        kind: track.kind,
+        enabled: track.enabled,
+        readyState: track.readyState,
+        muted: track.muted,
+      }));
+    const receivers = peerConnection
+      .getReceivers()
+      .map((receiver) => receiver.track)
+      .filter(Boolean)
+      .map((track) => ({
+        id: track.id,
+        kind: track.kind,
+        enabled: track.enabled,
+        readyState: track.readyState,
+        muted: track.muted,
+      }));
 
-    const hasAudio = senderTracks.some((track) => track.kind === "audio");
-    const hasVideo = senderTracks.some((track) => track.kind === "video");
-
-    console.log("📤 Sender tracks before offer:", senderTracks.map((track) => ({
-      id: track.id,
-      kind: track.kind,
-      enabled: track.enabled,
-      muted: track.muted,
-      readyState: track.readyState,
-    })));
-
-    if (!hasAudio) {
-      throw new Error("Local audio track is missing before createOffer");
-    }
-    if (callTypeValue === "video" && !hasVideo) {
-      throw new Error("Local video track is missing before createOffer");
-    }
+    console.log(`📤 getSenders (${label}):`, senders);
+    console.log(`📥 getReceivers (${label}):`, receivers);
   }, []);
 
   const logPeerStats = useCallback(async (peerConnection, label) => {
     if (!peerConnection || peerConnection.connectionState === "closed") return;
-
     try {
       const stats = await peerConnection.getStats();
       const outbound = [];
@@ -175,9 +106,11 @@ export const CallProvider = ({ children }) => {
       let selectedPair = null;
 
       stats.forEach((report) => {
-        if (report.type === "transport" && report.selectedCandidatePairId) {
-          const pair = stats.get(report.selectedCandidatePairId);
-          if (pair) selectedPair = pair;
+        if (report.type === "outbound-rtp" && !report.isRemote) {
+          outbound.push(report);
+        }
+        if (report.type === "inbound-rtp" && !report.isRemote) {
+          inbound.push(report);
         }
         if (
           report.type === "candidate-pair" &&
@@ -186,99 +119,42 @@ export const CallProvider = ({ children }) => {
         ) {
           selectedPair = report;
         }
-        if (report.type === "outbound-rtp" && !report.isRemote) {
-          outbound.push(report);
-        }
-        if (report.type === "inbound-rtp" && !report.isRemote) {
-          inbound.push(report);
-        }
       });
 
-      const senderSummary = peerConnection.getSenders().map((sender) => ({
-        trackId: sender.track?.id || null,
-        kind: sender.track?.kind || null,
-        enabled: sender.track?.enabled ?? null,
-        readyState: sender.track?.readyState || null,
-      }));
-      const receiverSummary = peerConnection.getReceivers().map((receiver) => ({
-        trackId: receiver.track?.id || null,
-        kind: receiver.track?.kind || null,
-        muted: receiver.track?.muted ?? null,
-        readyState: receiver.track?.readyState || null,
-      }));
-
-      console.log(`📊 [${label}] getSenders:`, senderSummary);
-      console.log(`📊 [${label}] getReceivers:`, receiverSummary);
       console.log(
-        `📊 [${label}] outbound-rtp:`,
+        `📊 outbound-rtp (${label}):`,
         outbound.map((report) => ({
           id: report.id,
           kind: report.kind || report.mediaType || null,
           packetsSent: report.packetsSent,
           bytesSent: report.bytesSent,
           framesEncoded: report.framesEncoded,
-          trackIdentifier: report.trackIdentifier || null,
         }))
       );
       console.log(
-        `📊 [${label}] inbound-rtp:`,
+        `📊 inbound-rtp (${label}):`,
         inbound.map((report) => ({
           id: report.id,
           kind: report.kind || report.mediaType || null,
           packetsReceived: report.packetsReceived,
           bytesReceived: report.bytesReceived,
           framesDecoded: report.framesDecoded,
-          trackIdentifier: report.trackIdentifier || null,
         }))
       );
-
       if (selectedPair) {
-        console.log(`📊 [${label}] selected ICE pair:`, {
+        console.log(`🧊 selected ICE pair (${label}):`, {
           id: selectedPair.id,
           state: selectedPair.state,
           nominated: selectedPair.nominated,
           localCandidateId: selectedPair.localCandidateId,
           remoteCandidateId: selectedPair.remoteCandidateId,
           currentRoundTripTime: selectedPair.currentRoundTripTime,
-          availableOutgoingBitrate: selectedPair.availableOutgoingBitrate,
-          bytesSent: selectedPair.bytesSent,
-          bytesReceived: selectedPair.bytesReceived,
         });
       }
     } catch (err) {
-      console.warn("⚠️ Failed to collect WebRTC stats:", err?.message || err);
+      console.warn("⚠️ Failed to read getStats():", err.message);
     }
   }, []);
-
-  const startStatsLogging = useCallback((peerConnection, label) => {
-    if (statsIntervalRef.current) {
-      clearInterval(statsIntervalRef.current);
-      statsIntervalRef.current = null;
-    }
-
-    logPeerStats(peerConnection, `${label}:initial`);
-    statsIntervalRef.current = setInterval(() => {
-      if (!peerConnection || peerConnection.connectionState === "closed") {
-        clearInterval(statsIntervalRef.current);
-        statsIntervalRef.current = null;
-        return;
-      }
-      logPeerStats(peerConnection, label);
-    }, 4000);
-  }, [logPeerStats]);
-
-  const stopStatsLogging = useCallback(() => {
-    if (statsIntervalRef.current) {
-      clearInterval(statsIntervalRef.current);
-      statsIntervalRef.current = null;
-    }
-  }, []);
-
-  useEffect(() => {
-    return () => {
-      stopStatsLogging();
-    };
-  }, [stopStatsLogging]);
 
   const getSdpUfrag = useCallback((description) => {
     const sdp = description?.sdp || "";
@@ -343,17 +219,8 @@ export const CallProvider = ({ children }) => {
       localStreamRef.current.getTracks().forEach((track) => {
         peerConnection.addTrack(track, localStreamRef.current);
       });
-      console.log(
-        "✅ Added local tracks to peer connection:",
-        localStreamRef.current.getTracks().map((track) => ({
-          id: track.id,
-          kind: track.kind,
-          enabled: track.enabled,
-          readyState: track.readyState,
-        }))
-      );
+      logPeerTrackState(peerConnection, "after-addTrack");
     }
-    applyVideoCodecPreferences(peerConnection);
 
     // Handle ICE candidates - use remoteUserId param instead of remoteUser state
     peerConnection.onicecandidate = (event) => {
@@ -366,36 +233,30 @@ export const CallProvider = ({ children }) => {
       }
     };
 
-    // Handle remote tracks in a cross-browser-safe way (event.streams may be empty).
+    // Handle remote tracks robustly: event.streams can be empty on some mobile browsers.
     peerConnection.ontrack = (event) => {
       if (!remoteStreamRef.current) {
         remoteStreamRef.current = new MediaStream();
       }
-
-      const alreadyAdded = remoteStreamRef.current
+      const alreadyPresent = remoteStreamRef.current
         .getTracks()
         .some((track) => track.id === event.track.id);
-      if (!alreadyAdded) {
+      if (!alreadyPresent) {
         remoteStreamRef.current.addTrack(event.track);
       }
-
-      event.track.onended = () => {
-        if (remoteStreamRef.current) {
-          remoteStreamRef.current.removeTrack(event.track);
-        }
-      };
-
       if (remoteVideoRef.current) {
         remoteVideoRef.current.srcObject = remoteStreamRef.current;
-        ensureVideoElementPlayback(remoteVideoRef.current, "remote");
+        remoteVideoRef.current.autoplay = true;
+        remoteVideoRef.current.playsInline = true;
+        remoteVideoRef.current.play?.().catch(() => {});
       }
-
-      console.log("📥 Remote track received:", {
+      console.log("🎧 ontrack:", {
         id: event.track.id,
         kind: event.track.kind,
         muted: event.track.muted,
         readyState: event.track.readyState,
       });
+      logPeerTrackState(peerConnection, "ontrack");
       logPeerStats(peerConnection, "ontrack");
     };
 
@@ -437,15 +298,6 @@ export const CallProvider = ({ children }) => {
 
     peerConnection.onconnectionstatechange = () => {
       console.log("🔗 Connection state:", peerConnection.connectionState);
-      if (peerConnection.connectionState === "connected") {
-        startStatsLogging(peerConnection, "call");
-      }
-      if (
-        peerConnection.connectionState === "closed" ||
-        peerConnection.connectionState === "failed"
-      ) {
-        stopStatsLogging();
-      }
     };
 
     peerConnectionRef.current = peerConnection;
@@ -460,19 +312,8 @@ export const CallProvider = ({ children }) => {
         audio,
       });
       localStreamRef.current = stream;
-      console.log(
-        "🎥 Local media tracks acquired:",
-        stream.getTracks().map((track) => ({
-          id: track.id,
-          kind: track.kind,
-          enabled: track.enabled,
-          muted: track.muted,
-          readyState: track.readyState,
-        }))
-      );
       if (localVideoRef.current) {
         localVideoRef.current.srcObject = stream;
-        ensureVideoElementPlayback(localVideoRef.current, "local");
       }
       return stream;
     } catch (error) {
@@ -515,24 +356,16 @@ export const CallProvider = ({ children }) => {
       console.log("🔗 Creating peer connection...");
       const peerConnection = createPeerConnection(recipient._id);
       console.log("✅ Peer connection created");
-      assertLocalTracksBeforeOffer(peerConnection, type);
+      logPeerTrackState(peerConnection, "before-createOffer");
 
       console.log("📝 Creating offer...");
-      const offer = await peerConnection.createOffer({
-        offerToReceiveAudio: true,
-        offerToReceiveVideo: type === "video",
-      });
-      const offerSummary = logSdpSummary(offer, "local-offer");
-      if (!offerSummary.hasAudio) {
-        throw new Error("Generated offer is missing m=audio");
-      }
-      if (type === "video" && !offerSummary.hasVideo) {
-        throw new Error("Generated video offer is missing m=video");
-      }
+      const offer = await peerConnection.createOffer();
+      logSdpMediaSections(offer, "local-offer");
       await peerConnection.setLocalDescription(offer);
-      logSdpSummary(peerConnection.localDescription, "local-offer-set");
+      logSdpMediaSections(peerConnection.localDescription, "local-offer-set");
       pendingRemoteAnswerRef.current = true;
       console.log("✅ Offer created:", offer);
+      logPeerStats(peerConnection, "after-local-offer");
 
       console.log("📤 Sending offer to:", recipient._id);
       socket.emit("call:initiate", {
@@ -584,26 +417,20 @@ export const CallProvider = ({ children }) => {
       remoteSocketIdRef.current = incomingCall.callerSocketId || null;
 
       console.log("signalingState:", peerConnection.signalingState);
-      logSdpSummary(incomingCall.offer, "remote-offer-received");
       await peerConnection.setRemoteDescription(
         new RTCSessionDescription(incomingCall.offer)
       );
-      applyVideoCodecPreferences(peerConnection);
-      logSdpSummary(peerConnection.remoteDescription, "remote-offer-set");
+      logSdpMediaSections(peerConnection.remoteDescription, "remote-offer-set");
+      logPeerTrackState(peerConnection, "after-remote-offer");
 
       // Flush any ICE candidates that arrived while we were setting up
       await flushIceCandidateBuffer(peerConnection);
 
       const answer = await peerConnection.createAnswer();
-      const answerSummary = logSdpSummary(answer, "local-answer");
-      if (!answerSummary.hasAudio) {
-        throw new Error("Generated answer is missing m=audio");
-      }
-      if ((incomingCall.type || "video") === "video" && !answerSummary.hasVideo) {
-        throw new Error("Generated video answer is missing m=video");
-      }
+      logSdpMediaSections(answer, "local-answer");
       await peerConnection.setLocalDescription(answer);
-      logSdpSummary(peerConnection.localDescription, "local-answer-set");
+      logSdpMediaSections(peerConnection.localDescription, "local-answer-set");
+      logPeerStats(peerConnection, "after-local-answer");
 
       socket.emit("call:answer", {
         to: incomingCall.from,
@@ -636,8 +463,6 @@ export const CallProvider = ({ children }) => {
   // Local-only cleanup (no socket emission) - used when the remote side
   // already knows the call ended (e.g. receiving call:ended, call:rejected, call:user-busy)
   const cleanupCall = useCallback(() => {
-    stopStatsLogging();
-
     if (localStreamRef.current) {
       localStreamRef.current.getTracks().forEach((track) => track.stop());
       localStreamRef.current = null;
@@ -664,14 +489,7 @@ export const CallProvider = ({ children }) => {
     setIsMuted(false);
     setIsVideoOff(false);
     remoteStreamRef.current = null;
-
-    if (localVideoRef.current) {
-      localVideoRef.current.srcObject = null;
-    }
-    if (remoteVideoRef.current) {
-      remoteVideoRef.current.srcObject = null;
-    }
-  }, [stopStatsLogging]);
+  }, []);
 
   // End call (user-initiated) - notifies remote side, then cleans up locally
   const endCall = () => {
@@ -768,20 +586,15 @@ export const CallProvider = ({ children }) => {
           return;
         }
 
-        if (pc.remoteDescription?.type) {
-          console.warn("⚠️ Remote description already set, ignoring duplicate answer");
-          return;
-        }
-
-        logSdpSummary(answer, "remote-answer-received");
         await pc.setRemoteDescription(new RTCSessionDescription(answer));
-        logSdpSummary(pc.remoteDescription, "remote-answer-set");
+        logSdpMediaSections(pc.remoteDescription, "remote-answer-set");
         pendingRemoteAnswerRef.current = false;
         console.log("✅ Remote description set");
 
         // Flush any ICE candidates that arrived before remote description was set
         await flushIceCandidateBuffer(pc);
-        logPeerStats(pc, "remote-answer-set");
+        logPeerTrackState(pc, "after-remote-answer");
+        logPeerStats(pc, "after-remote-answer");
       } catch (error) {
         console.error("❌ Error handling answer:", error);
       }
@@ -843,18 +656,13 @@ export const CallProvider = ({ children }) => {
           return;
         }
 
-        logSdpSummary(offer, "remote-ice-restart-offer");
         await pc.setRemoteDescription(new RTCSessionDescription(offer));
-        applyVideoCodecPreferences(pc);
-        logSdpSummary(pc.remoteDescription, "remote-ice-restart-offer-set");
 
         // Flush any buffered ICE candidates for the new session
         await flushIceCandidateBuffer(pc);
 
         const answer = await pc.createAnswer();
-        logSdpSummary(answer, "local-ice-restart-answer");
         await pc.setLocalDescription(answer);
-        logSdpSummary(pc.localDescription, "local-ice-restart-answer-set");
 
         // Route the answer back to the caller's specific socket
         const targetUserId = from || remoteUserIdRef.current;
@@ -925,8 +733,8 @@ export const CallProvider = ({ children }) => {
     addIceCandidateSafely,
     flushIceCandidateBuffer,
     queueIceCandidate,
-    logSdpSummary,
-    applyVideoCodecPreferences,
+    logSdpMediaSections,
+    logPeerTrackState,
     logPeerStats,
   ]);
 

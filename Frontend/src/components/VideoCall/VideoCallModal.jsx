@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useCall } from "../../context/CallContext";
 import {
   FiVideo,
@@ -37,28 +37,15 @@ const VideoCallModal = () => {
     return () => clearInterval(interval);
   }, [isCallActive]);
 
-  const ensurePlayback = useCallback((videoElement, label) => {
-    if (!videoElement) return;
-    videoElement.autoplay = true;
-    videoElement.playsInline = true;
-    const playPromise = videoElement.play?.();
-    if (playPromise && typeof playPromise.catch === "function") {
-      playPromise.catch((err) => {
-        console.warn(`⚠️ ${label} playback blocked:`, err?.message || err);
-      });
-    }
-  }, []);
-
   // Fallback: attach remote stream to video element when modal mounts
   useEffect(() => {
     if (isCallActive && remoteVideoRef.current && remoteStreamRef?.current) {
       remoteVideoRef.current.srcObject = remoteStreamRef.current;
-      ensurePlayback(remoteVideoRef.current, "remote");
+      remoteVideoRef.current.autoplay = true;
+      remoteVideoRef.current.playsInline = true;
+      remoteVideoRef.current.play?.().catch(() => {});
     }
-    if (isCallActive && localVideoRef.current) {
-      ensurePlayback(localVideoRef.current, "local");
-    }
-  }, [isCallActive, localVideoRef, remoteStreamRef, remoteVideoRef, ensurePlayback]);
+  }, [isCallActive, remoteVideoRef, remoteStreamRef]);
 
   if (!isCallActive) return null;
 
