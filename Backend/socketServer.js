@@ -166,12 +166,12 @@ const registerSocketServer = (server) => {
         socket.on("call:answer", ({ to, answer, callerSocketId }) => {
             if (callerSocketId) {
                 // Precise routing: send only to the socket that initiated the call
-                io.to(callerSocketId).emit("call:answered", { answer });
+                io.to(callerSocketId).emit("call:answered", { answer, fromSocketId: socket.id });
             } else {
                 // Fallback: broadcast to userId room (backward compatibility)
                 const recipientId = normalizeUserId(to);
                 if (getSocketCountForUser(recipientId) > 0) {
-                    io.to(recipientId).emit("call:answered", { answer });
+                    io.to(recipientId).emit("call:answered", { answer, fromSocketId: socket.id });
                 }
             }
         });
@@ -179,11 +179,11 @@ const registerSocketServer = (server) => {
         // ICE candidates: route to specific socket when available
         socket.on("call:ice-candidate", ({ to, candidate, targetSocketId }) => {
             if (targetSocketId) {
-                io.to(targetSocketId).emit("call:ice-candidate", { candidate });
+                io.to(targetSocketId).emit("call:ice-candidate", { candidate, fromSocketId: socket.id });
             } else {
                 const recipientId = normalizeUserId(to);
                 if (getSocketCountForUser(recipientId) > 0) {
-                    io.to(recipientId).emit("call:ice-candidate", { candidate });
+                    io.to(recipientId).emit("call:ice-candidate", { candidate, fromSocketId: socket.id });
                 }
             }
         });

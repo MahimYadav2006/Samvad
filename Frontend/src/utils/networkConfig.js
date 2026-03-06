@@ -14,6 +14,14 @@ const parseCsv = (value) =>
     .map((item) => item.trim())
     .filter(Boolean);
 
+const flattenUrls = (urls) => {
+  if (Array.isArray(urls)) {
+    return urls.map((value) => String(value || "").trim()).filter(Boolean);
+  }
+  const value = String(urls || "").trim();
+  return value ? [value] : [];
+};
+
 const dedupeServers = (servers) => {
   const seen = new Set();
   return servers.filter((server) => {
@@ -27,6 +35,49 @@ const dedupeServers = (servers) => {
     seen.add(key);
     return true;
   });
+};
+
+const normalizeIceServers = (servers, fallbackCredentials = {}) => {
+  const preferred = [];
+  const stunServers = [];
+  const turnServers = [];
+
+  dedupeServers(servers).forEach((server) => {
+    const urls = flattenUrls(server.urls);
+    urls.forEach((url) => {
+      if (url.toLowerCase().startsWith("stun:")) {
+        stunServers.push({ urls: url });
+        return;
+      }
+      if (!url.toLowerCase().startsWith("turn:") && !url.toLowerCase().startsWith("turns:")) {
+        return;
+      }
+
+      const username = server.username || fallbackCredentials.username;
+      const credential = server.credential || fallbackCredentials.credential;
+      if (!username || !credential) {
+        return;
+      }
+
+      turnServers.push({
+        urls: url,
+        username,
+        credential,
+      });
+    });
+  });
+
+  if (stunServers.length > 0) {
+    preferred.push(stunServers[0]);
+  }
+  if (turnServers.length > 0) {
+    preferred.push(turnServers[0]);
+  }
+  if (turnServers.length > 1) {
+    preferred.push(turnServers[1]);
+  }
+
+  return dedupeServers(preferred);
 };
 
 export const getBackendUrl = () => {
@@ -57,6 +108,8 @@ export const getBackendUrl = () => {
 
 export const getWebRtcIceServers = () => {
   const servers = [];
+  const turnUsername = getPublicEnv("VITE_TURN_USERNAME");
+  const turnCredential = getPublicEnv("VITE_TURN_CREDENTIAL");
 
   const customJson = getPublicEnv("VITE_WEBRTC_ICE_SERVERS");
   if (customJson) {
@@ -76,13 +129,11 @@ export const getWebRtcIceServers = () => {
 
   const stunUrls = parseCsv(getPublicEnv("VITE_STUN_URLS"));
   const effectiveStunUrls = stunUrls.length > 0 ? stunUrls : DEFAULT_STUN_URLS;
-  if (effectiveStunUrls.length > 0) {
-    servers.push({ urls: effectiveStunUrls });
-  }
+  effectiveStunUrls.forEach((url) => {
+    servers.push({ urls: url });
+  });
 
   const turnUrls = parseCsv(getPublicEnv("VITE_TURN_URLS"));
-  const turnUsername = getPublicEnv("VITE_TURN_USERNAME");
-  const turnCredential = getPublicEnv("VITE_TURN_CREDENTIAL");
   if (turnUrls.length > 0 && turnUsername && turnCredential) {
     // Each TURN URL must be its own entry so the browser tries them
     // independently (separate candidate pairs per transport).
@@ -95,7 +146,18 @@ export const getWebRtcIceServers = () => {
     });
   }
 
-  return dedupeServers(servers);
+  const normalized = normalizeIceServers(servers, {
+    username: turnUsername,
+    credential: turnCredential,
+  });
+  if (normalized.length > 0) {
+    return normalized;
+  }
+
+  // Absolute fallback that still follows the 1 STUN + 2 TURN layout.
+  return [
+    { urls: DEFAULT_STUN_URLS[0] },
+  ];
 };
 
 /**
@@ -106,6 +168,10 @@ export const getWebRtcIceServers = () => {
  * Falls back to the static env-var based servers on failure.
  */
 export const fetchFreshIceServers = async () => {
+  const fallbackCredentials = {
+    username: getPublicEnv("VITE_TURN_USERNAME"),
+    credential: getPublicEnv("VITE_TURN_CREDENTIAL"),
+  };
   try {
     const backendUrl = getBackendUrl();
     const resp = await fetch(`${backendUrl}/api/turn-credentials`, {
@@ -115,9 +181,11 @@ export const fetchFreshIceServers = async () => {
     const { iceServers } = await resp.json();
     if (Array.isArray(iceServers) && iceServers.length > 0) {
       console.log("✅ Fetched fresh TURN credentials from backend");
-      // Limit to 3 servers (1 STUN + 2 TURN) to prevent excessive
-      // ICE candidate gathering and "Unknown ufrag" errors
-      return iceServers.slice(0, 3);
+      // Enforce 1 STUN + 2 TURN maximum to reduce negotiation churn.
+      const normalized = normalizeIceServers(iceServers, fallbackCredentials);
+      if (normalized.length > 0) {
+        return normalized;
+      }
     }
   } catch (err) {
     console.warn("⚠️ Could not fetch fresh TURN credentials, using static fallback:", err.message);

@@ -36,39 +36,82 @@ export const CallProvider = ({ children }) => {
   // Track whether an ICE restart has already been attempted for the
   // current peer connection so we don't loop endlessly.
   const iceRestartAttemptedRef = useRef(false);
-  // Track the remote caller's specific socket ID for precise message routing
-  const callerSocketIdRef = useRef(null);
+  // Track the remote peer's specific socket ID for precise message routing.
+  const remoteSocketIdRef = useRef(null);
+  // Track remote user id in refs to avoid stale state closures in socket callbacks.
+  const remoteUserIdRef = useRef(null);
+  // Guard against duplicate/late answers for the same local offer.
+  const pendingRemoteAnswerRef = useRef(false);
+  const incomingCallRef = useRef(null);
+  const isCallActiveRef = useRef(false);
 
   // Current ICE-server config – refreshed before every call via
   // fetchFreshIceServers(), which hits the backend Metered API endpoint.
   const iceServersRef = useRef({ iceServers: getWebRtcIceServers() });
 
+  useEffect(() => {
+    incomingCallRef.current = incomingCall;
+  }, [incomingCall]);
+
+  useEffect(() => {
+    isCallActiveRef.current = isCallActive;
+  }, [isCallActive]);
+
+  const getSdpUfrag = useCallback((description) => {
+    const sdp = description?.sdp || "";
+    const match = sdp.match(/a=ice-ufrag:([^\r\n]+)/);
+    return match ? match[1] : null;
+  }, []);
+
+  const addIceCandidateSafely = useCallback(async (peerConnection, candidate) => {
+    const remoteUfrag = getSdpUfrag(peerConnection.remoteDescription);
+    const candidateUfrag = candidate?.usernameFragment || null;
+
+    // Drop stale candidates from a previous negotiation to avoid "Unknown ufrag".
+    if (remoteUfrag && candidateUfrag && remoteUfrag !== candidateUfrag) {
+      console.warn(
+        `⚠️ Ignoring ICE candidate with mismatched ufrag "${candidateUfrag}" (expected "${remoteUfrag}")`
+      );
+      return;
+    }
+
+    await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+    console.log("✅ ICE candidate added");
+  }, [getSdpUfrag]);
+
+  const queueIceCandidate = useCallback((candidate, reason) => {
+    if (!candidate) return;
+    iceCandidateBufferRef.current.push(candidate);
+    console.log(`📦 Buffering ICE candidate (${reason})`);
+  }, []);
+
   // Helper: flush buffered ICE candidates after remote description is set
-  const flushIceCandidateBuffer = async (peerConnection) => {
+  const flushIceCandidateBuffer = useCallback(async (peerConnection) => {
     const buffered = iceCandidateBufferRef.current;
     iceCandidateBufferRef.current = [];
     for (const candidate of buffered) {
       try {
-        await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+        await addIceCandidateSafely(peerConnection, candidate);
         console.log("✅ Buffered ICE candidate added");
       } catch (error) {
         console.warn("⚠️ Error adding buffered ICE candidate:", error.message);
       }
     }
-  };
+  }, [addIceCandidateSafely]);
 
   // Create PeerConnection
   // Accept remoteUserId as a parameter to avoid stale closure over remoteUser state
   const createPeerConnection = (remoteUserId) => {
-    // Close any existing peer connection before creating a new one
-    if (peerConnectionRef.current) {
-      peerConnectionRef.current.close();
-      peerConnectionRef.current = null;
+    // Ensure only one RTCPeerConnection exists for the active call.
+    if (peerConnectionRef.current && peerConnectionRef.current.signalingState !== "closed") {
+      console.warn("⚠️ Reusing existing RTCPeerConnection");
+      return peerConnectionRef.current;
     }
+
+    remoteUserIdRef.current = remoteUserId || remoteUserIdRef.current;
     // Clear ICE candidate buffer for the new connection
     iceCandidateBufferRef.current = [];
     iceRestartAttemptedRef.current = false;
-    callerSocketIdRef.current = null;
 
     const peerConnection = new RTCPeerConnection(iceServersRef.current);
 
@@ -85,6 +128,7 @@ export const CallProvider = ({ children }) => {
         socket.emit("call:ice-candidate", {
           to: remoteUserId,
           candidate: event.candidate,
+          targetSocketId: remoteSocketIdRef.current || undefined,
         });
       }
     };
@@ -105,6 +149,7 @@ export const CallProvider = ({ children }) => {
         // Attempt a single ICE restart before giving up
         if (!iceRestartAttemptedRef.current && peerConnection.signalingState !== "closed") {
           iceRestartAttemptedRef.current = true;
+          pendingRemoteAnswerRef.current = true;
           console.warn("⚠️ ICE failed — attempting ICE restart…");
           peerConnection
             .createOffer({ iceRestart: true })
@@ -125,6 +170,8 @@ export const CallProvider = ({ children }) => {
           console.error("❌ ICE connection failed — no viable candidate pair found");
           cleanupCall();
         }
+      } else if (state === "connected" || state === "completed") {
+        console.log("✅ ICE connection established:", state);
       } else if (state === "disconnected") {
         console.warn("⚠️ ICE connection disconnected — may recover");
       }
@@ -158,6 +205,12 @@ export const CallProvider = ({ children }) => {
 
   // Initiate a call
   const initiateCall = async (recipient, type = "video") => {
+    if (!socket || !user?._id || !recipient?._id) return;
+    if (peerConnectionRef.current || isCallActiveRef.current) {
+      console.warn("⚠️ Call is already active, ignoring new initiate request");
+      return;
+    }
+
     try {
       console.log("🎬 Initiating call to:", recipient);
       console.log("Call type:", type);
@@ -166,6 +219,10 @@ export const CallProvider = ({ children }) => {
       setCallType(type);
       setRemoteUser(recipient);
       setIsCallActive(true);
+      isCallActiveRef.current = true;
+      remoteUserIdRef.current = recipient._id;
+      remoteSocketIdRef.current = null;
+      pendingRemoteAnswerRef.current = false;
 
       // Fetch fresh TURN credentials before creating the connection
       console.log("🔑 Fetching fresh TURN credentials...");
@@ -184,6 +241,7 @@ export const CallProvider = ({ children }) => {
       console.log("📝 Creating offer...");
       const offer = await peerConnection.createOffer();
       await peerConnection.setLocalDescription(offer);
+      pendingRemoteAnswerRef.current = true;
       console.log("✅ Offer created:", offer);
 
       console.log("📤 Sending offer to:", recipient._id);
@@ -210,12 +268,18 @@ export const CallProvider = ({ children }) => {
       console.warn("⚠️ answerCall already in progress, ignoring duplicate");
       return;
     }
+    if (peerConnectionRef.current) {
+      console.warn("⚠️ Peer connection already exists, ignoring duplicate answer");
+      return;
+    }
     isAnsweringRef.current = true;
 
     try {
       setIsCallActive(true);
+      isCallActiveRef.current = true;
       setCallType(incomingCall.type || "video");
       setRemoteUser({ _id: incomingCall.from, name: incomingCall.callerName });
+      remoteUserIdRef.current = incomingCall.from;
 
       // Fetch fresh TURN credentials before creating the connection
       console.log("🔑 Fetching fresh TURN credentials...");
@@ -227,7 +291,7 @@ export const CallProvider = ({ children }) => {
       const peerConnection = createPeerConnection(incomingCall.from);
 
       // Persist the caller's socket ID for precise routing (e.g. ICE restart)
-      callerSocketIdRef.current = incomingCall.callerSocketId || null;
+      remoteSocketIdRef.current = incomingCall.callerSocketId || null;
 
       console.log("signalingState:", peerConnection.signalingState);
       await peerConnection.setRemoteDescription(
@@ -246,6 +310,7 @@ export const CallProvider = ({ children }) => {
         callerSocketId: incomingCall.callerSocketId,
       });
 
+      incomingCallRef.current = null;
       setIncomingCall(null);
     } catch (error) {
       console.error("Error answering call:", error);
@@ -259,6 +324,10 @@ export const CallProvider = ({ children }) => {
   const rejectCall = () => {
     if (incomingCall && socket) {
       socket.emit("call:reject", { to: incomingCall.from });
+      incomingCallRef.current = null;
+      remoteUserIdRef.current = null;
+      remoteSocketIdRef.current = null;
+      pendingRemoteAnswerRef.current = false;
       setIncomingCall(null);
     }
   };
@@ -279,7 +348,11 @@ export const CallProvider = ({ children }) => {
     // Clear ICE candidate buffer and answering guard
     iceCandidateBufferRef.current = [];
     isAnsweringRef.current = false;
-    callerSocketIdRef.current = null;
+    remoteSocketIdRef.current = null;
+    remoteUserIdRef.current = null;
+    pendingRemoteAnswerRef.current = false;
+    incomingCallRef.current = null;
+    isCallActiveRef.current = false;
 
     setIsCallActive(false);
     setIncomingCall(null);
@@ -292,8 +365,9 @@ export const CallProvider = ({ children }) => {
 
   // End call (user-initiated) - notifies remote side, then cleans up locally
   const endCall = () => {
-    if (remoteUser && socket) {
-      socket.emit("call:end", { to: remoteUser._id });
+    const targetUserId = remoteUserIdRef.current || remoteUser?._id;
+    if (targetUserId && socket) {
+      socket.emit("call:end", { to: targetUserId });
     }
     cleanupCall();
   };
@@ -322,35 +396,51 @@ export const CallProvider = ({ children }) => {
 
   // Socket listeners
   useEffect(() => {
-    if (!socket || !user) {
-      console.log(`Inside CallContext.jsx user is ${user} and socket is ${socket}`);
+    if (!socket || !user?._id) {
+      console.log("Inside CallContext.jsx listener setup skipped (missing user or socket)");
       return;
     }
 
-    // Incoming call
-    socket.on("call:incoming", (data) => {
+    const handleIncomingCall = (data) => {
       console.log("📞 INCOMING CALL EVENT RECEIVED:", data);
+      if (!data?.from || !data?.offer) {
+        console.warn("⚠️ Ignoring malformed incoming call payload");
+        return;
+      }
 
       // Ignore if already in a call or already answering
-      if (peerConnectionRef.current || isAnsweringRef.current) {
+      if (peerConnectionRef.current || isAnsweringRef.current || isCallActiveRef.current) {
         console.warn("⚠️ Already in a call, sending busy signal");
         socket.emit("call:busy", { to: data.from });
         return;
       }
 
+      if (incomingCallRef.current) {
+        console.warn("⚠️ Duplicate incoming call event ignored");
+        return;
+      }
+
+      incomingCallRef.current = data;
+      remoteUserIdRef.current = data.from;
+      remoteSocketIdRef.current = data.callerSocketId || null;
+      pendingRemoteAnswerRef.current = false;
       setIncomingCall(data);
       setRemoteUser({ _id: data.from, name: data.callerName });
       console.log("✅ incomingCall state updated");
-    });
+    };
 
     // Call answered — GUARDED: only process if signaling state is have-local-offer
-    socket.on("call:answered", async ({ answer }) => {
+    const handleCallAnswered = async ({ answer, fromSocketId }) => {
       console.log("✅ Call answered by recipient");
       try {
         const pc = peerConnectionRef.current;
         if (!pc) {
           console.warn("⚠️ No peer connection, ignoring answer");
           return;
+        }
+
+        if (fromSocketId) {
+          remoteSocketIdRef.current = fromSocketId;
         }
 
         console.log("signalingState:", pc.signalingState);
@@ -363,7 +453,13 @@ export const CallProvider = ({ children }) => {
           return;
         }
 
+        if (!pendingRemoteAnswerRef.current) {
+          console.warn("⚠️ Ignoring unexpected answer (no pending local offer)");
+          return;
+        }
+
         await pc.setRemoteDescription(new RTCSessionDescription(answer));
+        pendingRemoteAnswerRef.current = false;
         console.log("✅ Remote description set");
 
         // Flush any ICE candidates that arrived before remote description was set
@@ -371,38 +467,53 @@ export const CallProvider = ({ children }) => {
       } catch (error) {
         console.error("❌ Error handling answer:", error);
       }
-    });
+    };
 
     // ICE candidate received — BUFFERED: queue if remote description not yet set
-    socket.on("call:ice-candidate", async ({ candidate }) => {
+    const handleIceCandidate = async ({ candidate, fromSocketId }) => {
       try {
+        if (!candidate) return;
+        if (fromSocketId) {
+          remoteSocketIdRef.current = fromSocketId;
+        }
+
         const pc = peerConnectionRef.current;
         if (!pc) {
-          console.warn("⚠️ No peer connection, ignoring ICE candidate");
+          if (incomingCallRef.current || isAnsweringRef.current || isCallActiveRef.current) {
+            queueIceCandidate(candidate, "peer connection not ready yet");
+          } else {
+            console.warn("⚠️ No active call state, dropping ICE candidate");
+          }
           return;
         }
 
         if (pc.remoteDescription && pc.remoteDescription.type) {
-          await pc.addIceCandidate(new RTCIceCandidate(candidate));
-          console.log("✅ ICE candidate added (type:", candidate?.type || "unknown", ")");
+          await addIceCandidateSafely(pc, candidate);
         } else {
           // Buffer the candidate — will be flushed after setRemoteDescription
-          console.log("📦 Buffering ICE candidate (remote description not set yet)");
-          iceCandidateBufferRef.current.push(candidate);
+          queueIceCandidate(candidate, "remote description not set yet");
         }
       } catch (error) {
         console.error("❌ Error adding ICE candidate:", error.message);
       }
-    });
+    };
 
     // ICE restart offer from remote peer (sent when their ICE failed)
     // The backend enriches this event with `from` (userId) and `callerSocketId`
     // so we avoid stale closures over remoteUser/incomingCall state.
-    socket.on("call:ice-restart", async ({ offer, from, callerSocketId }) => {
+    const handleIceRestart = async ({ offer, from, callerSocketId }) => {
       console.log("🔄 ICE restart offer received");
       try {
         const pc = peerConnectionRef.current;
-        if (!pc) return;
+        if (!pc) {
+          console.warn("⚠️ No peer connection, ignoring ICE restart offer");
+          return;
+        }
+
+        remoteUserIdRef.current = from || remoteUserIdRef.current;
+        if (callerSocketId) {
+          remoteSocketIdRef.current = callerSocketId;
+        }
 
         console.log("signalingState:", pc.signalingState);
 
@@ -423,46 +534,68 @@ export const CallProvider = ({ children }) => {
         await pc.setLocalDescription(answer);
 
         // Route the answer back to the caller's specific socket
+        const targetUserId = from || remoteUserIdRef.current;
+        if (!targetUserId) {
+          console.warn("⚠️ Missing target user for ICE restart answer");
+          return;
+        }
         socket.emit("call:answer", {
-          to: from,
+          to: targetUserId,
           answer,
-          callerSocketId: callerSocketId || callerSocketIdRef.current,
+          callerSocketId: callerSocketId || remoteSocketIdRef.current,
         });
       } catch (err) {
         console.error("❌ ICE restart handling failed:", err);
       }
-    });
+    };
 
     // Call ended
-    socket.on("call:ended", () => {
+    const handleCallEnded = () => {
       console.log("📴 Call ended by remote user");
       cleanupCall();
-    });
+    };
 
     // Call rejected
-    socket.on("call:rejected", () => {
+    const handleCallRejected = () => {
       console.log("❌ Call was rejected");
       alert("Call was rejected");
       cleanupCall();
-    });
+    };
 
     // User busy
-    socket.on("call:user-busy", () => {
+    const handleCallBusy = () => {
       console.log("⏳ User is busy");
       alert("User is busy");
       cleanupCall();
-    });
+    };
+
+    // Defensively remove same handler first to prevent accidental duplication.
+    socket.off("call:incoming", handleIncomingCall);
+    socket.off("call:answered", handleCallAnswered);
+    socket.off("call:ice-candidate", handleIceCandidate);
+    socket.off("call:ice-restart", handleIceRestart);
+    socket.off("call:ended", handleCallEnded);
+    socket.off("call:rejected", handleCallRejected);
+    socket.off("call:user-busy", handleCallBusy);
+
+    socket.on("call:incoming", handleIncomingCall);
+    socket.on("call:answered", handleCallAnswered);
+    socket.on("call:ice-candidate", handleIceCandidate);
+    socket.on("call:ice-restart", handleIceRestart);
+    socket.on("call:ended", handleCallEnded);
+    socket.on("call:rejected", handleCallRejected);
+    socket.on("call:user-busy", handleCallBusy);
 
     return () => {
-      socket.off("call:incoming");
-      socket.off("call:answered");
-      socket.off("call:ice-candidate");
-      socket.off("call:ice-restart");
-      socket.off("call:ended");
-      socket.off("call:rejected");
-      socket.off("call:user-busy");
+      socket.off("call:incoming", handleIncomingCall);
+      socket.off("call:answered", handleCallAnswered);
+      socket.off("call:ice-candidate", handleIceCandidate);
+      socket.off("call:ice-restart", handleIceRestart);
+      socket.off("call:ended", handleCallEnded);
+      socket.off("call:rejected", handleCallRejected);
+      socket.off("call:user-busy", handleCallBusy);
     };
-  }, [socket, user, cleanupCall]);
+  }, [socket, user?._id, cleanupCall, addIceCandidateSafely, flushIceCandidateBuffer, queueIceCandidate]);
 
   const value = {
     isCallActive,
