@@ -36,6 +36,8 @@ export const CallProvider = ({ children }) => {
   // Track whether an ICE restart has already been attempted for the
   // current peer connection so we don't loop endlessly.
   const iceRestartAttemptedRef = useRef(false);
+  // Track the remote caller's specific socket ID for precise message routing
+  const callerSocketIdRef = useRef(null);
 
   // Current ICE-server config – refreshed before every call via
   // fetchFreshIceServers(), which hits the backend Metered API endpoint.
@@ -66,6 +68,7 @@ export const CallProvider = ({ children }) => {
     // Clear ICE candidate buffer for the new connection
     iceCandidateBufferRef.current = [];
     iceRestartAttemptedRef.current = false;
+    callerSocketIdRef.current = null;
 
     const peerConnection = new RTCPeerConnection(iceServersRef.current);
 
@@ -223,6 +226,10 @@ export const CallProvider = ({ children }) => {
       await getUserMedia(incomingCall.type === "video", true);
       const peerConnection = createPeerConnection(incomingCall.from);
 
+      // Persist the caller's socket ID for precise routing (e.g. ICE restart)
+      callerSocketIdRef.current = incomingCall.callerSocketId || null;
+
+      console.log("signalingState:", peerConnection.signalingState);
       await peerConnection.setRemoteDescription(
         new RTCSessionDescription(incomingCall.offer)
       );
@@ -272,6 +279,7 @@ export const CallProvider = ({ children }) => {
     // Clear ICE candidate buffer and answering guard
     iceCandidateBufferRef.current = [];
     isAnsweringRef.current = false;
+    callerSocketIdRef.current = null;
 
     setIsCallActive(false);
     setIncomingCall(null);
@@ -345,6 +353,8 @@ export const CallProvider = ({ children }) => {
           return;
         }
 
+        console.log("signalingState:", pc.signalingState);
+
         // STATE GUARD: prevent "Cannot set remote answer in state stable"
         if (pc.signalingState !== "have-local-offer") {
           console.warn(
@@ -365,7 +375,6 @@ export const CallProvider = ({ children }) => {
 
     // ICE candidate received — BUFFERED: queue if remote description not yet set
     socket.on("call:ice-candidate", async ({ candidate }) => {
-      console.log("🧊 ICE candidate received");
       try {
         const pc = peerConnectionRef.current;
         if (!pc) {
@@ -375,30 +384,50 @@ export const CallProvider = ({ children }) => {
 
         if (pc.remoteDescription && pc.remoteDescription.type) {
           await pc.addIceCandidate(new RTCIceCandidate(candidate));
+          console.log("✅ ICE candidate added (type:", candidate?.type || "unknown", ")");
         } else {
           // Buffer the candidate — will be flushed after setRemoteDescription
           console.log("📦 Buffering ICE candidate (remote description not set yet)");
           iceCandidateBufferRef.current.push(candidate);
         }
       } catch (error) {
-        console.error("❌ Error adding ICE candidate:", error);
+        console.error("❌ Error adding ICE candidate:", error.message);
       }
     });
 
     // ICE restart offer from remote peer (sent when their ICE failed)
-    socket.on("call:ice-restart", async ({ offer }) => {
+    // The backend enriches this event with `from` (userId) and `callerSocketId`
+    // so we avoid stale closures over remoteUser/incomingCall state.
+    socket.on("call:ice-restart", async ({ offer, from, callerSocketId }) => {
       console.log("🔄 ICE restart offer received");
       try {
         const pc = peerConnectionRef.current;
         if (!pc) return;
+
+        console.log("signalingState:", pc.signalingState);
+
+        // Only accept if signaling state allows setting a remote offer
+        if (pc.signalingState !== "stable") {
+          console.warn(
+            `⚠️ Cannot handle ICE restart in state "${pc.signalingState}" (expected "stable")`
+          );
+          return;
+        }
+
         await pc.setRemoteDescription(new RTCSessionDescription(offer));
+
+        // Flush any buffered ICE candidates for the new session
+        await flushIceCandidateBuffer(pc);
+
         const answer = await pc.createAnswer();
         await pc.setLocalDescription(answer);
-        // Send the answer back through the normal channel
-        const targetId = remoteUser?._id || incomingCall?.from;
-        if (targetId) {
-          socket.emit("call:answer", { to: targetId, answer });
-        }
+
+        // Route the answer back to the caller's specific socket
+        socket.emit("call:answer", {
+          to: from,
+          answer,
+          callerSocketId: callerSocketId || callerSocketIdRef.current,
+        });
       } catch (err) {
         console.error("❌ ICE restart handling failed:", err);
       }

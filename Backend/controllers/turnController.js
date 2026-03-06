@@ -31,7 +31,9 @@ exports.getTurnCredentials = async (_req, res) => {
     const data = await fetchJson(url);
     // Metered returns an array of ICE server objects
     if (Array.isArray(data) && data.length > 0) {
-      return res.status(200).json({ s: "ok", iceServers: data });
+      // Limit to 3 servers (1 STUN + 2 TURN) to prevent excessive
+      // ICE candidate gathering
+      return res.status(200).json({ s: "ok", iceServers: data.slice(0, 3) });
     }
     // Empty array → fall back
     return res.status(200).json({ s: "ok", iceServers: buildStaticFallback() });

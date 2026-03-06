@@ -115,7 +115,9 @@ export const fetchFreshIceServers = async () => {
     const { iceServers } = await resp.json();
     if (Array.isArray(iceServers) && iceServers.length > 0) {
       console.log("✅ Fetched fresh TURN credentials from backend");
-      return iceServers;
+      // Limit to 3 servers (1 STUN + 2 TURN) to prevent excessive
+      // ICE candidate gathering and "Unknown ufrag" errors
+      return iceServers.slice(0, 3);
     }
   } catch (err) {
     console.warn("⚠️ Could not fetch fresh TURN credentials, using static fallback:", err.message);

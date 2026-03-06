@@ -188,6 +188,21 @@ const registerSocketServer = (server) => {
             }
         });
 
+        // ICE restart: forward new offer from caller whose ICE failed,
+        // enriched with the caller's userId and socketId so the receiver
+        // can route the answer back precisely.
+        socket.on("call:ice-restart", ({ to, offer }) => {
+            const recipientId = normalizeUserId(to);
+            if (getSocketCountForUser(recipientId) > 0) {
+                console.log("🔄 ICE restart offer forwarded to", recipientId);
+                io.to(recipientId).emit("call:ice-restart", {
+                    offer,
+                    from: socket.data.userId,
+                    callerSocketId: socket.id,
+                });
+            }
+        });
+
         socket.on("call:end", ({ to }) => {
             const recipientId = normalizeUserId(to);
             if (getSocketCountForUser(recipientId) > 0) {
