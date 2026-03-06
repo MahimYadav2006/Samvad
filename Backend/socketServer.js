@@ -138,6 +138,7 @@ const registerSocketServer = (server) => {
         });
 
         // WebRTC Call Handlers
+        // Track which socket initiated a call so answers go back to the right socket
         socket.on("call:initiate", ({ to, offer, from, callerName, type }) => {
             console.log(`📞 Call from ${from} (${callerName}) to ${to} of type ${type}`);
 
@@ -146,29 +147,44 @@ const registerSocketServer = (server) => {
 
             if (recipientSocketCount > 0) {
                 console.log(`✅ Emitting incoming call to user ${recipientId} (${recipientSocketCount} active socket(s))`);
+                // Include the caller's specific socketId so the answer can be routed back precisely
                 io.to(recipientId).emit("call:incoming", {
                     from,
                     offer,
                     callerName,
                     type,
+                    callerSocketId: socket.id,
                 });
             } else {
                 console.log(`❌ Recipient ${recipientId || to} is offline or not found`);
+                socket.emit("call:user-offline");
             }
         });
 
 
-        socket.on("call:answer", ({ to, answer }) => {
-            const recipientId = normalizeUserId(to);
-            if (getSocketCountForUser(recipientId) > 0) {
-                io.to(recipientId).emit("call:answered", { answer });
+        // Answer: route back to the specific caller socket to avoid duplicate delivery
+        socket.on("call:answer", ({ to, answer, callerSocketId }) => {
+            if (callerSocketId) {
+                // Precise routing: send only to the socket that initiated the call
+                io.to(callerSocketId).emit("call:answered", { answer });
+            } else {
+                // Fallback: broadcast to userId room (backward compatibility)
+                const recipientId = normalizeUserId(to);
+                if (getSocketCountForUser(recipientId) > 0) {
+                    io.to(recipientId).emit("call:answered", { answer });
+                }
             }
         });
 
-        socket.on("call:ice-candidate", ({ to, candidate }) => {
-            const recipientId = normalizeUserId(to);
-            if (getSocketCountForUser(recipientId) > 0) {
-                io.to(recipientId).emit("call:ice-candidate", { candidate });
+        // ICE candidates: route to specific socket when available
+        socket.on("call:ice-candidate", ({ to, candidate, targetSocketId }) => {
+            if (targetSocketId) {
+                io.to(targetSocketId).emit("call:ice-candidate", { candidate });
+            } else {
+                const recipientId = normalizeUserId(to);
+                if (getSocketCountForUser(recipientId) > 0) {
+                    io.to(recipientId).emit("call:ice-candidate", { candidate });
+                }
             }
         });
 
