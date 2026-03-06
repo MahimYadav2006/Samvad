@@ -164,7 +164,6 @@ export function uploadAudioMessage(file) {
 
             const audioUrl = response.data.data.audioUrl;
             toast.success("Audio uploaded successfully");
-            console.log("Inside chat slice ", response.data.data);
             // optionally return or dispatch audioUrl here
             return audioUrl;
 
