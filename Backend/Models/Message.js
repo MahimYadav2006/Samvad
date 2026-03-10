@@ -40,6 +40,13 @@ const messageSchema = new Schema({
         // enum:['Media','Text','Document','Giphy','Audio'],
     },
     document: documentSchema,
+    iv:{
+        type: String,
+    },
+    encryptedKeys:{
+        type: Map,
+        of: String,
+    },
 });
 
 const Message = new mongoose.model("Message",messageSchema);

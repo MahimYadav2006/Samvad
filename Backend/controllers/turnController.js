@@ -38,7 +38,7 @@ exports.getTurnCredentials = async (_req, res) => {
     // Empty array → fall back
     return res.status(200).json({ s: "ok", iceServers: buildStaticFallback() });
   } catch (err) {
-    console.error("⚠️  Metered API error, using static TURN fallback:", err.message);
+    console.error("⚠️  Metered API error, using static TURN fallback:", err);
     return res.status(200).json({ s: "ok", iceServers: buildStaticFallback() });
   }
 };

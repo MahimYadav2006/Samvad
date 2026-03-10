@@ -45,7 +45,7 @@ const resetUserPresence = async () => {
         {},
         { $set: { status: "Offline" }, $unset: { socketId: 1 } }
     );
-    console.log("✅ Reset all users to Offline state");
+    // console.log("✅ Reset all users to Offline state");
 };
 
 const startServer = async () => {

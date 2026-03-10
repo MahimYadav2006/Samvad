@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Grid } from "@giphy/react-components";
 import { GiphyFetch } from "@giphy/js-fetch-api";
 import debounce from "lodash/debounce";
@@ -24,22 +24,23 @@ export default function Giphy() {
     [value]
   );
 
-  const debouncedSearch = useCallback(
-    debounce(async (searchValue) => {
-      setIsLoading(true);
-      setError(null);
-      try {
-        const result = await gf.search(searchValue || "trending", {
-          offset: 0,
-          limit: 10,
-        });
-        setGifs(result.data);
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setIsLoading(false);
-      }
-    }, 500),
+  const debouncedSearch = useMemo(
+    () =>
+      debounce(async (searchValue) => {
+        setIsLoading(true);
+        setError(null);
+        try {
+          const result = await gf.search(searchValue || "trending", {
+            offset: 0,
+            limit: 10,
+          });
+          setGifs(result.data);
+        } catch (err) {
+          setError(err.message);
+        } finally {
+          setIsLoading(false);
+        }
+      }, 500),
     []
   );
 

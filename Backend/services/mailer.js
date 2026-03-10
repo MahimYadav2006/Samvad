@@ -29,7 +29,7 @@ const Mailer = (async({name,otp,email})=>{
 
     try{
         const info = await transporter.sendMail(mailOptions);
-        console.log("Email sent to: %s", email);
+        // console.log("Email sent to: %s", email);
     }
     catch (error) {
         console.log('Error sending email:', error);

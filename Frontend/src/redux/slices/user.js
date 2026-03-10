@@ -3,6 +3,7 @@ import axios from '../../utils/axios';
 import {toast} from "react-toastify";
 import { getSocket } from '../../utils/socket';
 import { isJwtToken } from '../../utils/authToken';
+import { decryptMessage, getStoredPrivateKey } from '../../utils/encryption';
 
 const initialState = {
     isLoading: false,
@@ -65,6 +66,44 @@ const getAuthToken = (getState) => {
     const token = getState().auth.token;
     return isJwtToken(token) ? token : null;
 };
+
+/**
+ * Decrypt an array of messages using the current user's private key.
+ * Messages without encryption fields are returned as-is.
+ */
+async function decryptMessages(messages, currentUserId) {
+    if (!messages || !messages.length || !currentUserId) return messages;
+    const privateKeyJwk = getStoredPrivateKey(currentUserId);
+    if (!privateKeyJwk) return messages;
+
+    const decrypted = await Promise.all(
+        messages.map(async (msg) => {
+            if (!msg.iv || !msg.encryptedKeys) return msg;
+            try {
+                const encKeys = msg.encryptedKeys instanceof Map
+                    ? Object.fromEntries(msg.encryptedKeys)
+                    : (typeof msg.encryptedKeys === 'object' ? msg.encryptedKeys : {});
+                const wrappedKey = encKeys[currentUserId];
+                if (!wrappedKey) {
+                    // No wrapped key for this user — message was not encrypted
+                    // for us (e.g. sender didn't have our public key at the time)
+                    return { ...msg, content: "🔒 Unable to decrypt message" };
+                }
+                const plaintext = await decryptMessage(
+                    msg.content,
+                    msg.iv,
+                    wrappedKey,
+                    privateKeyJwk
+                );
+                return { ...msg, content: plaintext };
+            } catch (err) {
+                console.error("[E2EE] Decryption failed for message:", msg._id, err);
+                return { ...msg, content: "🔒 Unable to decrypt message" };
+            }
+        })
+    );
+    return decrypted;
+}
 
 export function findUser(currId) {
     return async (dispatch, getState) => {
@@ -224,7 +263,7 @@ export function findOppositeUser(oppId) {
 }
 
 export function fetchMessages(convId) {
-    return async (dispatch) => {
+    return async (dispatch, getState) => {
         dispatch(setError(null));
         dispatch(setLoading(true));
         const newData = {
@@ -236,12 +275,15 @@ export function fetchMessages(convId) {
             dispatch(setLoading(false));
             return;
         }
-        socket.emit('direct-chat-history', newData, (response) => {
+        socket.emit('direct-chat-history', newData, async (response) => {
             if (response?.error) {
                 toast.error(response.message || "Failed to fetch messages");
             } else {
                 toast.success("Messages retrieved successfully");
-                dispatch(setCurrMessages(response.data.history || []));
+                const currentUserId = getState().auth.user?._id;
+                const history = response.data.history || [];
+                const decryptedHistory = await decryptMessages(history, currentUserId);
+                dispatch(setCurrMessages(decryptedHistory));
             }
             dispatch(setLoading(false));
         });
@@ -274,7 +316,13 @@ export function startConversation(data) {
             const { data: responseData } = res.data;
             await dispatch(setCurrMessages([])); // Clear current messages
             await dispatch(setCurrentConversation(responseData.conversation._id));
-            await dispatch(setCurrMessages(responseData.conversation.messages || []));
+
+            // E2EE: decrypt messages loaded with conversation
+            const currentUserId = getState().auth.user?._id;
+            const rawMessages = responseData.conversation.messages || [];
+            const decryptedMessages = await decryptMessages(rawMessages, currentUserId);
+            await dispatch(setCurrMessages(decryptedMessages));
+
             await dispatch(findOppositeUser(data.userId));
             // await dispatch(fetchMessages(responseData.conversation._id));
             // dispatch(setCurrMessages(responseData.conversation.messages || []));

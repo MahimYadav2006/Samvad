@@ -11,6 +11,7 @@ router.patch('/update-avatar',uploadAvatar.single("avatar"), userController.upda
 router.patch('/update-password',  userController.updatePassword);
 router.get('/users',  userController.getUsers);
 router.get("/someone", userController.getSomeOne);
+router.patch('/public-key', userController.updatePublicKey);
 router.post('/start-conversation',  userController.startConversation);
 router.get('/conversations',userController.getConversations);
 

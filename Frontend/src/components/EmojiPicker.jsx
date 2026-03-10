@@ -14,7 +14,7 @@ function EmojiPicker({ onEmojiSelect }) {
     } catch {
       return "light";
     }
-  }, [pickerOpen]);
+  }, []);
 
   useEffect(() => {
     if (!pickerOpen) return;

@@ -4,6 +4,7 @@ import { fetchFreshIceServers, getWebRtcIceServers } from "../utils/networkConfi
 
 const CallContext = createContext();
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useCall = () => {
   const context = useContext(CallContext);
   if (!context) {

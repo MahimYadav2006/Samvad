@@ -3,6 +3,7 @@ import axios from '../../utils/axios';
 import {toast} from "react-toastify";
 import { getSocket } from '../../utils/socket';
 import { isJwtToken } from '../../utils/authToken';
+import { encryptMessage, getStoredPrivateKey } from '../../utils/encryption';
 
 const initialState = {
     userList: [],
@@ -94,8 +95,79 @@ export function newDirectMessage(data) {
             return;
         }
 
+        let messagePayload = { ...data };
+
+        // E2EE: encrypt text content if both participants have public keys
+        const state = getState();
+        const currentUserId = state.auth.user?._id;
+        const oppositeUser = state.user.oppositeUser;
+        const currentUser = state.user.user;
+        const token = getAuthToken(getState);
+
+        if (
+            messagePayload.content &&
+            currentUserId &&
+            oppositeUser?._id
+        ) {
+            try {
+                // Always fetch the latest public key for the receiver from the
+                // backend to avoid using a stale key if they rotated.
+                let receiverPubKey = null;
+                let senderPubKey = null;
+
+                if (token) {
+                    const freshRes = await axios.get(
+                        `/user/someone?userId=${oppositeUser._id}`,
+                        { headers: { authorization: `bearer ${token}` } }
+                    );
+                    const freshPubKeyRaw = freshRes.data?.data?.user?.publicKey;
+                    if (freshPubKeyRaw) {
+                        receiverPubKey = typeof freshPubKeyRaw === "string"
+                            ? JSON.parse(freshPubKeyRaw) : freshPubKeyRaw;
+                    }
+                }
+
+                // For the sender's own key, derive from the locally stored private
+                // key so we never rely on a possibly-stale Redux value.
+                const ownPrivateKey = getStoredPrivateKey(currentUserId);
+                if (ownPrivateKey) {
+                    // Strip RSA private fields to get the public JWK
+                    const RSA_PRIVATE_FIELDS = ["d", "dp", "dq", "p", "q", "qi"];
+                    senderPubKey = Object.fromEntries(
+                        Object.entries(ownPrivateKey).filter(([key]) => !RSA_PRIVATE_FIELDS.includes(key))
+                    );
+                    // Fix key_ops for public key usage
+                    senderPubKey.key_ops = ["wrapKey"];
+                } else if (currentUser?.publicKey) {
+                    senderPubKey = typeof currentUser.publicKey === "string"
+                        ? JSON.parse(currentUser.publicKey) : currentUser.publicKey;
+                }
+
+                if (senderPubKey && receiverPubKey) {
+                    const publicKeysMap = {
+                        [currentUserId]: senderPubKey,
+                        [oppositeUser._id]: receiverPubKey,
+                    };
+
+                    const { encryptedContent, iv, encryptedKeys } = await encryptMessage(
+                        messagePayload.content,
+                        publicKeysMap
+                    );
+
+                    messagePayload.content = encryptedContent;
+                    messagePayload.iv = iv;
+                    messagePayload.encryptedKeys = encryptedKeys;
+                } else {
+                    console.warn("[E2EE] Missing public key(s), sending plaintext.",
+                        { hasSender: !!senderPubKey, hasReceiver: !!receiverPubKey });
+                }
+            } catch (err) {
+                console.error("[E2EE] Encryption failed, sending plaintext:", err);
+            }
+        }
+
         const newData = {
-            message: data,
+            message: messagePayload,
             conversationId: getState().user.currConversation,
         };
 

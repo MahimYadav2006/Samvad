@@ -2,6 +2,7 @@ import { createSlice } from '@reduxjs/toolkit';
 import axios from '../../utils/axios';
 import {toast} from "react-toastify";
 import { isJwtToken } from "../../utils/authToken";
+import { initializeE2EEKeys } from "../../utils/encryption";
 // import { dispatch } from '../store';
 
 
@@ -110,12 +111,18 @@ export function VerifyOTP(formValues,navigate){ // cuz if it is verified then we
             headers:{
                 "Content-Type": "application/json",
             },
-        }).then((response)=>{
+        }).then(async (response)=>{
 
             const {token,message,user_id} = response.data;
 
             dispatch(setAuthSession({ token, userId: user_id }));
             toast.success(message || "Email Verified Successfully");
+
+            // Initialize E2EE keys for this user (awaited to ensure keys are
+            // ready before the user starts chatting)
+            if (token && user_id) {
+                await initializeE2EEKeys(user_id, token, axios);
+            }
         }).catch((error)=>{
             dispatch(setError(error));
             toast.error(error?.message || "Something Went Wrong");
@@ -139,12 +146,18 @@ export function LoginUser(formValues,navigate){ // cuz if it is verified then we
             headers:{
                 "Content-Type": "application/json",
             },
-        }).then((response)=>{
+        }).then(async (response)=>{
 
             const {token,message,user_id} = response.data;
 
             dispatch(setAuthSession({ token, userId: user_id }));
             toast.success(message || "Logged In Successfully");
+
+            // Initialize E2EE keys for this user (awaited to ensure keys are
+            // ready before the user starts chatting)
+            if (token && user_id) {
+                await initializeE2EEKeys(user_id, token, axios);
+            }
         }).catch((error)=>{
             dispatch(setError(error));
             toast.error(error?.message || "Something Went Wrong");
@@ -167,12 +180,18 @@ export function GoogleAuthUser(accessToken, navigate) {
             headers: {
                 "Content-Type": "application/json",
             },
-        }).then((response) => {
+        }).then(async (response) => {
 
             const { token, message, user_id } = response.data;
 
             dispatch(setAuthSession({ token, userId: user_id }));
             toast.success(message || "Google authentication successful");
+
+            // Initialize E2EE keys for this user (awaited to ensure keys are
+            // ready before the user starts chatting)
+            if (token && user_id) {
+                await initializeE2EEKeys(user_id, token, axios);
+            }
         }).catch((error) => {
             dispatch(setError(error));
             toast.error(error?.response?.data?.message || error?.message || "Something Went Wrong");

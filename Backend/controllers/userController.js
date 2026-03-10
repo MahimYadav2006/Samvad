@@ -17,7 +17,7 @@ exports.getMe = catchAsync(async (req,res,next)=>{
 
 exports.getSomeOne = catchAsync(async (req,res,next)=>{
     const {userId} = req.query; // User Id from the query
-    const user = await User.findById(userId).select("name jobTitle bio country avatar _id status socketId");
+    const user = await User.findById(userId).select("name jobTitle bio country avatar _id status socketId publicKey");
     if(!user){
         return res.status(404).json({
             status: "Error",
@@ -96,7 +96,7 @@ exports.updatePassword = catchAsync(async (req,res,next)=>{
 // GET USERS
 exports.getUsers = catchAsync(async (req,res,next)=>{
     const {_id} = req.user;
-    const other_verified_users = await User.find({_id : {$ne: _id}, verified: true}).select("name avatar _id status");
+    const other_verified_users = await User.find({_id : {$ne: _id}, verified: true}).select("name avatar _id status publicKey");
 
     res.status(200).json({
         status: "success",
@@ -142,6 +142,18 @@ exports.startConversation = catchAsync(async (req,res,next)=>{
             }
         });
     }
+});
+
+
+// UPDATE PUBLIC KEY (E2EE)
+exports.updatePublicKey = catchAsync(async (req,res,next)=>{
+    const { publicKey } = req.body;
+    const { _id } = req.user;
+    if (!publicKey) {
+        return res.status(400).json({ status: "error", message: "publicKey is required" });
+    }
+    await User.findByIdAndUpdate(_id, { publicKey }, { new: true, validateModifiedOnly: true });
+    res.status(200).json({ status: "success", message: "Public key updated successfully" });
 });
 
 

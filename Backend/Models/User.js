@@ -60,6 +60,9 @@ const userSchema = new mongoose.Schema({
     },
     socketId:{
         type: String,
+    },
+    publicKey:{
+        type: String,
     }
 },{timestamps: true})
 
@@ -70,12 +73,12 @@ userSchema.pre("save", async function(next){ // Everyttime before the user is sa
     if(this.otp && this.isModified("otp")){
         // Hash the OTP with cost of 12     
         this.otp = await bcrypt.hash(this.otp.toString(), 12);
-        console.log("From Pre save hook " , this.otp);
+        // console.log("From Pre save hook " , this.otp);
     }
     if(this.password && this.isModified("password")){
         // Hash the Pass with cost of 12     
         this.password = await bcrypt.hash(this.password, 12);
-        console.log("From Pre save hook " , this.password);
+        // console.log("From Pre save hook " , this.password);
     }
     next();
 });

@@ -1,4 +1,4 @@
-import { useRef, useEffect, useState } from "react";
+import { useRef, useEffect, useState, useCallback } from "react";
 import { XIcon } from "@phosphor-icons/react";
 import { useDispatch, useSelector } from "react-redux";
 import { toggleAudioModal } from "../redux/slices/app";
@@ -16,6 +16,12 @@ export default function VoiceRecorder() {
   const [audioUrl, setAudioUrl] = useState(null);
   const [uploading, setUploading] = useState(false);
 
+  const handleCancel = useCallback(() => {
+    setAudioUrl(null);
+    setUploading(false);
+    dispatch(toggleAudioModal(false));
+  }, [dispatch]);
+
   useEffect(() => {
     const keyHandler = (event) => {
       if (!audioModal || event.key !== "Escape") return;
@@ -23,7 +29,7 @@ export default function VoiceRecorder() {
     };
     document.addEventListener("keydown", keyHandler);
     return () => document.removeEventListener("keydown", keyHandler);
-  }, [audioModal]);
+  }, [audioModal, handleCancel]);
 
   const handleRecordingComplete = (blob) => {
     setUploading(true);
@@ -55,12 +61,6 @@ export default function VoiceRecorder() {
     );
 
     handleCancel(); // close modal & reset state
-  };
-
-  const handleCancel = () => {
-    setAudioUrl(null);
-    setUploading(false);
-    dispatch(toggleAudioModal(false));
   };
 
   return (

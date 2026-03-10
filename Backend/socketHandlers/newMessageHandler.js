@@ -5,7 +5,7 @@ const newMessageHandler = async (socket, data, io, ack) => {
     console.log(`[newMessageHandler] Data: ${JSON.stringify(data)}`);
 
     const { message, conversationId } = data;
-    const { author, content, media, audioUrl, document, type, giphyUrl } = message;
+    const { author, content, media, audioUrl, document, type, giphyUrl, iv, encryptedKeys } = message;
 
     try {
         // Find conversation by conversationId
@@ -17,7 +17,7 @@ const newMessageHandler = async (socket, data, io, ack) => {
         }
 
         // Create new message
-        const newMessage = await Message.create({ author, content, media, audioUrl, document, type, giphyUrl });
+        const newMessage = await Message.create({ author, content, media, audioUrl, document, type, giphyUrl, iv, encryptedKeys });
 
         // Add message to conversation
         conversation.messages.push(newMessage._id);
