@@ -1,7 +1,7 @@
 const https = require("https");
 
 /**
- * GET /api/turn-credentials
+ * GET /turn-credentials
  *
  * Fetches fresh, temporary TURN credentials from the Metered.ca REST API.
  * These short-lived credentials replace the static ones that expire and
