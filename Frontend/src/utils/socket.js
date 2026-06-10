@@ -2,11 +2,11 @@ import { io } from "socket.io-client";
 import { setSocket, updateOppositeUserStatus } from "../redux/slices/user";
 import { setTypingIndicator, updateUserOnlineStatus } from "../redux/slices/chat";
 import { isJwtToken } from "./authToken";
-import { getBackendUrl } from "./networkConfig";
+import { getSocketUrl } from "./networkConfig";
 import { decryptMessage, getStoredPrivateKey } from "./encryption";
 
 let socket = null;
-const BASE_URL = getBackendUrl();
+const BASE_URL = getSocketUrl();
 
 export const connectSocket = (token, store) => {
   if (!isJwtToken(token)) {
