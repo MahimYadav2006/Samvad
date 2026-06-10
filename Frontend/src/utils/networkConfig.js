@@ -126,14 +126,11 @@ export const getApiBaseUrl = () => {
     return trimSlash(parsed.toString());
   } catch {
     const normalized = trimSlash(backendUrl);
-    if (/\/api$/i.test(normalized)) {
-      return normalized;
-    }
     return normalized;
   }
 };
 
-export const getSocketUrl = () => stripApiSuffix(getApiBaseUrl());
+export const getSocketUrl = () => stripApiSuffix(getBackendUrl());
 
 export const getWebRtcIceServers = () => {
   const servers = [];
