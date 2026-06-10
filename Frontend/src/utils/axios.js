@@ -1,9 +1,9 @@
 import axios from 'axios';
 import { isJwtToken } from './authToken';
-import { getBackendUrl } from './networkConfig';
+import { getApiBaseUrl } from './networkConfig';
 
 // Configuring Base URL
-const BASE_URL = getBackendUrl();
+const BASE_URL = getApiBaseUrl();
 
 
 // const BASE_URL = "https://707e82ada361.ngrok-free.app";

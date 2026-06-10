@@ -37,6 +37,8 @@ const dedupeServers = (servers) => {
   });
 };
 
+const stripApiSuffix = (value) => trimSlash(String(value || "").trim()).replace(/\/api$/i, "");
+
 const normalizeIceServers = (servers, fallbackCredentials = {}) => {
   const preferred = [];
   const stunServers = [];
@@ -106,6 +108,30 @@ export const getBackendUrl = () => {
   }
 };
 
+export const getApiBaseUrl = () => {
+  const backendUrl = getBackendUrl();
+
+  try {
+    const parsed = new URL(backendUrl);
+    if (parsed.pathname.toLowerCase().endsWith("/api")) {
+      return trimSlash(parsed.toString());
+    }
+
+    if (LOCAL_HOSTNAMES.has(parsed.hostname)) {
+      return trimSlash(parsed.toString());
+    }
+
+    const normalizedPath = trimSlash(parsed.pathname);
+    parsed.pathname = `${normalizedPath}/api`;
+    return trimSlash(parsed.toString());
+  } catch {
+    const normalized = trimSlash(backendUrl);
+    return normalized;
+  }
+};
+
+export const getSocketUrl = () => stripApiSuffix(getBackendUrl());
+
 export const getWebRtcIceServers = () => {
   const servers = [];
   const turnUsername = getPublicEnv("VITE_TURN_USERNAME");
@@ -174,7 +200,8 @@ export const fetchFreshIceServers = async () => {
   };
   try {
     const backendUrl = getBackendUrl();
-    const resp = await fetch(`${backendUrl}/api/turn-credentials`, {
+    const turnCredentialsUrl = `${stripApiSuffix(backendUrl)}/api/turn-credentials`;
+    const resp = await fetch(turnCredentialsUrl, {
       credentials: "include",
     });
     if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
